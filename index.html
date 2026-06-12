@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Dropzone Commander</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
+<link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-straight/css/uicons-regular-straight.css">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg:#0D1B2A;--bg-deep:#070F1A;--bg-card:#1A2B3C;--bg-card2:#1F3044;
+    --border:#2E3D4F;--border-light:#3A4F65;
+    --accent:#F97316;--accent-glow:rgba(249,115,22,0.4);--accent-dim:rgba(249,115,22,0.12);
+    --purple:#7C3AED;--purple-glow:rgba(124,58,237,0.4);--purple-dim:rgba(124,58,237,0.12);
+    --gold:#F59E0B;--gold-dim:rgba(245,158,11,0.1);--gold-glow:rgba(245,158,11,0.3);
+    --cyan:#00D4FF;--cyan-dim:rgba(0,212,255,0.1);
+    --green:#22C55E;--green-dim:rgba(34,197,94,0.12);
+    --red:#EF4444;--silver:#94A3B8;--bronze:#CD7F32;
+    --text:#F1F5F9;--text-sec:#CBD5E1;--text-muted:#64748B;--text-dim:#3A4A5C;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;overflow:hidden;background:var(--bg-deep);}
+  body{font-family:'Rajdhani',sans-serif;}
+  .phone{width:100%;height:100%;height:100dvh;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+  .grid-bg{position:absolute;inset:0;opacity:0.03;pointer-events:none;background-image:linear-gradient(rgba(0,212,255,0.3) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.3) 1px,transparent 1px);background-size:40px 40px;}
+  button{font-family:'Rajdhani',sans-serif;}
+
+  /* ══ SCREENS ══ */
+  .screen{display:none;flex:1;min-height:0;flex-direction:column;z-index:2;}
+  .screen.active{display:flex;animation:scrIn 0.22s ease-out;}
+  @keyframes scrIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .content{flex:1;overflow-y:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .content::-webkit-scrollbar{display:none;}
+
+  /* ══ HEADER ══ */
+  .header{display:flex;align-items:center;padding:12px 14px 8px;flex-shrink:0;z-index:10;}
+  .h-user{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+  .h-avatar{width:34px;height:34px;border-radius:10px;background:var(--bg-card);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .h-name{font-size:14px;font-weight:700;color:var(--text);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;}
+  .h-level{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);background:var(--cyan-dim);padding:1px 6px;border-radius:4px;font-weight:600;}
+  .h-right{display:flex;gap:6px;align-items:center;}
+  .cur{display:flex;align-items:center;gap:3px;background:var(--bg-card);border:1px solid var(--border);border-radius:7px;padding:4px 8px;}
+  .cur-icon{font-size:12px;}
+  .cur-val{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text);font-weight:700;}
+
+  /* ══ TOP BAR (sub-screens) ══ */
+  .top-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px;flex-shrink:0;z-index:5;}
+  .back-btn{background:none;border:none;color:var(--text-muted);font-size:24px;cursor:pointer;padding:0 8px 0 0;line-height:1;}
+  .page-title{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--text);letter-spacing:1.5px;flex:1;}
+  .page-title.center{text-align:center;flex:initial;}
+
+  /* ══ STATS ROW ══ */
+  .stats-row{display:flex;gap:8px;padding:8px 14px 0;flex-shrink:0;}
+  .stat-card{flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;}
+  .sc-val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;line-height:1;}
+  .sc-val.k{color:var(--accent);}.sc-val.w{color:var(--gold);}.sc-val.r{color:var(--green);}
+  .sc-label{font-size:11px;color:var(--text-muted);margin-top:3px;font-weight:600;}
+
+  /* ══ LB MINI ══ */
+  .lb-mini{margin:8px 14px 0;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;}
+  .lb-mini:active{transform:scale(0.98);}
+  .lb-icon{font-size:22px;}
+  .lb-info{flex:1;}
+  .lb-title{font-size:13px;font-weight:700;color:var(--text);}
+  .lb-rank-txt{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);font-weight:600;}
+  .lb-rank-txt strong{color:var(--gold);}
+  .lb-arrow{font-size:16px;color:var(--text-dim);}
+
+  /* ══ SOLDIER SHOWCASE ══ */
+  .soldier-area{position:relative;flex:1;min-height:160px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .soldier-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(249,115,22,0.07),transparent 60%),radial-gradient(ellipse at 30% 70%,rgba(0,212,255,0.04),transparent 50%);pointer-events:none;}
+  .soldier-glow{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:200px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(249,115,22,0.12),transparent 60%);filter:blur(30px);z-index:1;}
+  .soldier-emoji{font-size:min(120px,18vh);position:relative;z-index:2;filter:drop-shadow(0 0 25px rgba(249,115,22,0.25)) drop-shadow(0 4px 20px rgba(0,0,0,0.5));animation:soldierFloat 5s ease-in-out infinite;line-height:1;}
+  @keyframes soldierFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+  /* ══ ACTIVE FIGHTER CARD (home) ══ */
+  .fighter-card-home{margin:0 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;z-index:3;}
+  .fc-av{width:44px;height:44px;border-radius:10px;background:var(--bg-deep);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;box-shadow:0 0 10px var(--accent-glow);}
+  .fc-info{flex:1;min-width:0;}
+  .fc-name{font-size:14px;font-weight:700;color:var(--text);}
+  .fc-meta{display:flex;gap:6px;align-items:center;margin-top:2px;}
+  .fc-class{font-size:10px;color:var(--accent);background:var(--accent-dim);padding:1px 6px;border-radius:3px;font-weight:700;text-transform:uppercase;}
+  .fc-lv{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);font-weight:600;}
+  .fc-bars{margin-top:5px;display:flex;flex-direction:column;gap:3px;}
+  .fbr{display:flex;align-items:center;gap:5px;}
+  .fbr-l{font-size:9px;color:var(--text-muted);width:16px;font-weight:700;}
+  .fbr-t{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .fbr-f{height:100%;border-radius:2px;}
+  .fbr-f.pw{background:linear-gradient(90deg,var(--accent),#FB923C);}
+  .fbr-f.xp{background:linear-gradient(90deg,var(--cyan),#38BDF8);}
+  .fbr-v{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);width:32px;text-align:right;font-weight:600;}
+  .fc-switch{font-size:12px;color:var(--cyan);font-weight:600;cursor:pointer;background:none;border:1px solid rgba(0,212,255,0.2);padding:4px 8px;border-radius:6px;}
+
+  /* ══ DEPLOY ══ */
+  .deploy-area{padding:10px 14px 8px;flex-shrink:0;}
+  .deploy-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--accent),#D9650E);border:none;border-radius:12px;color:white;font-size:18px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;box-shadow:0 4px 20px var(--accent-glow);animation:dGlow 2.5s ease-in-out infinite;}
+  @keyframes dGlow{0%,100%{box-shadow:0 4px 16px var(--accent-glow)}50%{box-shadow:0 6px 28px rgba(249,115,22,0.5)}}
+  .deploy-btn:active{transform:scale(0.97);}
+  .shimmer{position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);animation:shimmer 3s ease-in-out infinite;pointer-events:none;}
+  @keyframes shimmer{0%{left:-100%}50%,100%{left:150%}}
+
+  /* ══ MODALS ══ */
+  .modal-overlay{position:fixed;inset:0;background:rgba(5,10,18,0.85);z-index:100;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);padding:20px;}
+  .modal-overlay.show{display:flex;animation:modIn 0.25s ease-out;}
+  @keyframes modIn{from{opacity:0}to{opacity:1}}
+  .modal{width:100%;max-width:360px;background:var(--bg-card);border:1.5px solid var(--border);border-radius:18px;padding:24px 20px;position:relative;animation:modSlide 0.3s ease-out;max-height:85dvh;overflow-y:auto;scrollbar-width:none;}
+  .modal::-webkit-scrollbar{display:none;}
+  @keyframes modSlide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .modal-close{position:absolute;top:10px;right:14px;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:4px;z-index:2;}
+  .modal-title{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--text);letter-spacing:1px;margin-bottom:16px;text-align:center;}
+  .cfg-sec{margin-bottom:14px;}
+  .cfg-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-weight:600;}
+  .cfg-chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{padding:8px 10px;border-radius:8px;font-size:12px;font-weight:700;color:var(--text-muted);background:var(--bg-deep);border:1.5px solid var(--border);cursor:pointer;transition:all 0.15s;flex:1;text-align:center;min-width:0;white-space:nowrap;}
+  .chip:active{transform:scale(0.95);}
+  .chip.on{color:var(--text);border-color:var(--accent);background:var(--accent-dim);}
+  .chip.green.on{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+  .chip.gold.on{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);}
+  .chip.red.on{border-color:var(--red);background:rgba(239,68,68,0.12);color:var(--red);}
+  .cfg-fighter{display:flex;align-items:center;gap:10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .cfg-f-av{width:36px;height:36px;border-radius:8px;background:var(--bg-card);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .cfg-f-name{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+  .cfg-f-meta{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);font-weight:600;}
+  .start-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--accent),#D9650E);border:none;border-radius:10px;color:white;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-top:8px;box-shadow:0 4px 16px var(--accent-glow);position:relative;overflow:hidden;}
+  .start-btn:active{transform:scale(0.97);}
+
+  /* ══ BOTTOM NAV ══ */
+  .bottom-nav{display:flex;flex-shrink:0;z-index:10;background:rgba(7,15,26,0.92);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:6px 8px calc(10px + env(safe-area-inset-bottom));}
+  .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;cursor:pointer;border:none;background:none;position:relative;transition:all 0.15s;}
+  .nav-tab:active{transform:scale(0.92);}
+  .nav-icon{font-size:22px;color:var(--text-dim);transition:color 0.2s;line-height:1;display:inline-flex;align-items:center;justify-content:center;}
+  .nav-label{font-size:10px;color:var(--text-dim);font-weight:600;letter-spacing:0.5px;}
+  .nav-tab.active .nav-icon{color:var(--accent);filter:drop-shadow(0 0 4px rgba(249,115,22,0.35));}
+  .nav-tab.active .nav-label{color:var(--accent);}
+  .nav-dot{position:absolute;top:4px;right:calc(50% - 14px);width:6px;height:6px;background:var(--accent);border-radius:50%;display:none;}
+  .nav-dot.show{display:block;}
+
+  /* ══ SPLASH ══ */
+  #splash{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 0.5s ease;}
+  #splash.hide{opacity:0;pointer-events:none;}
+  .emblem{width:80px;height:80px;position:relative;margin-bottom:24px;}
+  .emblem-ring{position:absolute;inset:0;border:2px solid var(--purple);border-radius:50%;animation:ringSpin 8s linear infinite;}
+  .emblem-ring::before{content:'';position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent-glow);}
+  .emblem-ring-inner{position:absolute;inset:8px;border:1px solid var(--border);border-radius:50%;animation:ringSpin 6s linear infinite reverse;}
+  .emblem-center{position:absolute;inset:16px;background:radial-gradient(circle,rgba(249,115,22,0.15),transparent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;}
+  @keyframes ringSpin{to{transform:rotate(360deg)}}
+  .title-pre{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:6px;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;opacity:0.7;text-align:center;}
+  .title-main{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:800;color:var(--text);letter-spacing:3px;line-height:1.1;text-transform:uppercase;text-align:center;text-shadow:0 0 30px rgba(124,58,237,0.3);}
+  .title-main .acc2{background:linear-gradient(135deg,var(--purple),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .title-line{width:60px;height:2px;background:linear-gradient(90deg,transparent,var(--purple),var(--accent),transparent);margin:14px auto;}
+  .title-sub{font-size:14px;font-weight:500;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;text-align:center;}
+  .splash-status{margin-top:40px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-muted);letter-spacing:3px;display:flex;align-items:center;gap:8px;}
+  .blink{display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;animation:blinkDot 1.2s ease-in-out infinite;box-shadow:0 0 6px var(--green);}
+  @keyframes blinkDot{0%,100%{opacity:1}50%{opacity:0.2}}
+  .loading-track{width:220px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:16px;}
+  .loading-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--purple),var(--accent));border-radius:2px;transition:width 0.4s ease;}
+  .splash-version{position:absolute;bottom:32px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;text-align:center;width:100%;}
+
+  /* ══ SECTION LABELS / GENERIC ══ */
+  .sec-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;margin:16px 16px 10px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+  .toast{position:fixed;top:14px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--bg-card);border:1.5px solid var(--accent);color:var(--text);font-size:14px;font-weight:700;border-radius:10px;padding:10px 18px;z-index:600;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 6px 24px rgba(0,0,0,0.5);max-width:90%;text-align:center;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast.green{border-color:var(--green);}
+  .toast.red{border-color:var(--red);}
+
+  /* ══ TABS ══ */
+  .tabs{display:flex;padding:0 12px;flex-shrink:0;border-bottom:1px solid var(--border);z-index:5;}
+  .tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:0.8px;text-transform:uppercase;cursor:pointer;border:none;background:none;position:relative;transition:color 0.2s;}
+  .tab.active{color:var(--accent);}
+  .tab.active::after{content:'';position:absolute;bottom:-1px;left:15%;right:15%;height:2px;background:var(--accent);border-radius:1px;}
+
+  /* ══ FIGHTERS LIST ══ */
+  .slot-counter{display:flex;align-items:center;justify-content:space-between;margin:6px 16px 14px;}
+  .slot-text{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:1px;}
+  .slot-dots{display:flex;gap:5px;}
+  .slot-dot{width:8px;height:8px;border-radius:50%;background:var(--border);}
+  .slot-dot.filled{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.4);}
+  .fighter-card{background:var(--bg-card);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin:0 16px 12px;position:relative;overflow:hidden;}
+  .fighter-card.active-fighter{border-color:var(--accent);}
+  .active-badge{position:absolute;top:10px;right:12px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--accent);background:var(--accent-dim);padding:2px 8px;border-radius:4px;letter-spacing:1px;text-transform:uppercase;border:1px solid rgba(249,115,22,0.25);}
+  .fc-top{display:flex;gap:14px;margin-bottom:12px;}
+  .fc-avatar{width:64px;height:64px;border-radius:12px;background:var(--bg-deep);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;position:relative;}
+  .fighter-card.active-fighter .fc-avatar{border-color:var(--accent);}
+  .fc-level-badge{position:absolute;bottom:-3px;right:-3px;font-family:'Share Tech Mono',monospace;font-size:9px;color:white;background:var(--accent);padding:1px 5px;border-radius:4px;font-weight:700;}
+  .fc-name2{font-size:16px;font-weight:700;color:var(--text);margin-bottom:2px;}
+  .fc-class2{display:inline-block;font-size:10px;font-weight:700;padding:1px 8px;border-radius:4px;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;}
+  .fc-class2.assault{color:var(--accent);background:var(--accent-dim);}
+  .fc-class2.scout{color:var(--cyan);background:var(--cyan-dim);}
+  .fc-class2.medic{color:var(--green);background:var(--green-dim);}
+  .fc-class2.marksman{color:var(--purple);background:var(--purple-dim);}
+  .stat-bars{display:flex;flex-direction:column;gap:5px;flex:1;}
+  .sbar-row{display:flex;align-items:center;gap:6px;}
+  .sbar-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);min-width:26px;}
+  .sbar-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .sbar-fill{height:100%;border-radius:2px;transition:width 0.6s ease;}
+  .sbar-fill.str{background:linear-gradient(90deg,#EF4444,#F87171);}
+  .sbar-fill.endr{background:linear-gradient(90deg,var(--green),#4ADE80);}
+  .sbar-fill.agi{background:linear-gradient(90deg,var(--cyan),#38BDF8);}
+  .sbar-fill.acc{background:linear-gradient(90deg,var(--purple),#A78BFA);}
+  .sbar-fill.stl{background:linear-gradient(90deg,var(--gold),#FBBF24);}
+  .sbar-val{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);min-width:20px;text-align:right;}
+  .fc-manage{width:100%;padding:9px;margin-top:4px;background:transparent;border:1.5px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+  .fc-manage:active{transform:scale(0.97);border-color:var(--accent);color:var(--accent);}
+  .fc-set-active{width:100%;padding:9px;margin-top:8px;background:var(--accent-dim);border:1.5px solid var(--accent);border-radius:8px;color:var(--accent);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;}
+  .locked-card{background:var(--bg-card);border:1.5px dashed var(--border);border-radius:14px;padding:24px 16px;margin:0 16px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;opacity:0.6;}
+  .lock-icon{font-size:28px;opacity:0.4;}
+  .lock-text{font-size:13px;color:var(--text-dim);font-weight:600;}
+  .lock-req{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--gold);background:var(--gold-dim);padding:3px 10px;border-radius:5px;}
+  .add-btn{display:flex;align-items:center;gap:4px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:6px 12px;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;}
+
+  /* ══ FIGHTER DETAIL ══ */
+  .avatar-showcase{text-align:center;margin:16px 0 20px;}
+  .big-avatar{width:88px;height:88px;border-radius:50%;background:var(--bg-deep);border:2.5px solid var(--accent);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 0 25px var(--accent-glow);}
+  .showcase-name{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:var(--text);letter-spacing:1px;}
+  .showcase-class{font-size:12px;color:var(--accent);font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+  .stats-grid{display:flex;flex-direction:column;gap:8px;margin:0 16px 16px;}
+  .sg-row{display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .sg-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);min-width:42px;letter-spacing:1px;}
+  .sg-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+  .sg-fill{height:100%;border-radius:3px;}
+  .sg-val{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--text);min-width:28px;text-align:right;}
+  .style-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 16px 16px;}
+  .style-chip{padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;color:var(--text-muted);background:var(--bg-deep);border:1px solid var(--border);cursor:pointer;flex:1;text-align:center;white-space:nowrap;}
+  .style-chip.active{color:var(--text);border-color:var(--accent);background:var(--accent-dim);}
+  .gear-row{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 16px 8px;}
+  .gear-icon{width:42px;height:42px;border-radius:10px;background:var(--bg-deep);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .gear-name{font-size:14px;font-weight:700;color:var(--text);}
+  .gear-stat{font-size:11px;color:var(--text-muted);}
+  .gear-pwr{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent);font-weight:700;margin-left:auto;}
+  .empty-state{text-align:center;padding:24px 16px;color:var(--text-dim);}
+  .empty-icon{font-size:36px;margin-bottom:8px;opacity:0.4;}
+  .empty-text{font-size:13px;color:var(--text-muted);}
+</style>
+<style>
+  /* ══ DAILY STRIKE MODAL ══ */
+  .streak-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(233,69,96,0.12);border:1px solid rgba(233,69,96,0.2);border-radius:8px;padding:5px 14px;margin-bottom:14px;}
+  .streak-text{font-family:'Orbitron',sans-serif;font-size:12px;font-weight:700;color:#E94560;letter-spacing:1px;}
+  .calendar{display:flex;gap:5px;justify-content:center;margin-bottom:20px;}
+  .day{flex:1;max-width:42px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .day-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-muted);}
+  .day-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid var(--border);background:var(--bg-deep);color:var(--text-dim);}
+  .day.claimed .day-circle{border-color:var(--green);background:var(--green-dim);color:var(--green);}
+  .day.today .day-circle{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);box-shadow:0 0 12px var(--gold-glow);animation:todayPulse 2s ease-in-out infinite;}
+  @keyframes todayPulse{0%,100%{box-shadow:0 0 8px var(--gold-glow)}50%{box-shadow:0 0 20px var(--gold-glow)}}
+  .day-reward{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);}
+  .day.today .day-reward{color:var(--gold);}
+  .reward-box{background:var(--bg-deep);border:1.5px solid var(--gold);border-radius:14px;padding:16px;margin-bottom:18px;text-align:center;}
+  .rb-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;font-weight:600;}
+  .rb-items{display:flex;justify-content:center;gap:24px;}
+  .rb-icon{font-size:28px;margin-bottom:2px;}
+  .rb-val{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--text);}
+  .rb-name{font-size:11px;color:var(--text-muted);font-weight:600;}
+  .claim-btn{width:100%;padding:16px;border:none;border-radius:12px;font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;background:linear-gradient(135deg,var(--gold),#D97706);color:var(--bg-deep);box-shadow:0 4px 20px var(--gold-glow);position:relative;overflow:hidden;}
+  .claim-btn:active{transform:scale(0.97);}
+  .claim-btn.done{background:var(--bg-card2);color:var(--text-dim);box-shadow:none;cursor:default;}
+
+  /* ══ BATTLE LOADING ══ */
+  .bl-top{padding:24px 20px 0;text-align:center;flex-shrink:0;}
+  .match-label{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--cyan);letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:4px;}
+  .match-title{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:800;color:var(--text);letter-spacing:2px;}
+  .match-meta{display:flex;justify-content:center;gap:14px;margin-top:8px;}
+  .mm{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);font-weight:600;}
+  .mm strong{color:var(--text-sec);}
+  .tip-area{text-align:center;padding:0 30px 16px;}
+  .tip-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:2px;margin-bottom:4px;font-weight:600;}
+  .tip-text{font-size:13px;color:var(--text-sec);line-height:1.4;transition:opacity 0.3s;}
+  .loading-section{padding:0 20px 24px;flex-shrink:0;}
+  .load-items{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .load-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(26,43,60,0.6);border:1px solid rgba(46,61,79,0.4);border-radius:8px;opacity:0.3;transition:all 0.4s;}
+  .load-item.active{opacity:1;border-color:var(--cyan);background:rgba(0,212,255,0.04);}
+  .load-item.done{opacity:0.5;border-color:var(--green);}
+  .li-icon{font-size:16px;width:24px;text-align:center;}
+  .li-text{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+  .li-status{font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;min-width:54px;text-align:right;color:var(--text-dim);}
+  .load-item.active .li-status{color:var(--cyan);animation:pulse 1s ease-in-out infinite;}
+  .load-item.done .li-status{color:var(--green);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .prog-header{display:flex;justify-content:space-between;margin-bottom:6px;}
+  .prog-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);font-weight:600;}
+  .prog-pct{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--cyan);}
+  .prog-track{height:6px;background:rgba(46,61,79,0.5);border-radius:3px;overflow:hidden;}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--cyan),#38BDF8,var(--green));border-radius:3px;transition:width 0.3s ease-out;}
+  .players-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:0 20px 24px;flex-shrink:0;}
+  .pbr-text{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text-sec);font-weight:600;}
+  .pbr-count{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--text);min-width:42px;text-align:center;}
+
+  /* ══ BATTLE WATCH ══ */
+  .hud-top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;flex-shrink:0;z-index:5;background:rgba(7,15,26,0.9);border-bottom:1px solid var(--border);}
+  .hud-alive{display:flex;align-items:center;gap:5px;}
+  .alive-num{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:800;color:var(--text);}
+  .alive-total{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .hud-timer{text-align:center;}
+  .timer-val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:2px;}
+  .timer-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:1px;}
+  .hud-kills{display:flex;align-items:center;gap:5px;}
+  .kills-num{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:800;color:var(--accent);}
+  .map-area{position:relative;width:100%;flex:0 0 42dvh;background:var(--bg-deep);overflow:hidden;border-bottom:1px solid var(--border);}
+  #mapCanvas{width:100%;height:100%;display:block;}
+  .map-notif{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Orbitron',sans-serif;font-size:20px;font-weight:800;color:var(--accent);text-shadow:0 0 20px var(--accent-glow),0 2px 8px rgba(0,0,0,0.6);letter-spacing:3px;white-space:nowrap;pointer-events:none;opacity:0;z-index:8;text-transform:uppercase;}
+  .map-notif.show{animation:notifPop 2s ease-out forwards;}
+  @keyframes notifPop{0%{opacity:0;transform:translate(-50%,-50%) scale(2)}10%{opacity:1;transform:translate(-50%,-50%) scale(0.95)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.05)}}
+  .placement-badge{position:absolute;top:8px;left:10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);background:rgba(7,15,26,0.7);padding:3px 8px;border-radius:5px;border:1px solid var(--border);z-index:5;}
+  .placement-badge strong{color:var(--gold);font-family:'Orbitron',sans-serif;font-size:13px;}
+  .zone-badge{position:absolute;top:8px;right:10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--cyan);background:rgba(7,15,26,0.7);padding:3px 8px;border-radius:5px;border:1px solid var(--border);z-index:5;display:flex;align-items:center;gap:4px;}
+  .zone-dot{width:5px;height:5px;border-radius:50%;background:var(--cyan);animation:pulse 1.5s ease-in-out infinite;}
+  .fighter-bar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(7,15,26,0.9);flex-shrink:0;border-bottom:1px solid var(--border);}
+  .fb-avatar{width:32px;height:32px;border-radius:8px;background:var(--bg-card);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .fb-info{flex:1;min-width:0;}
+  .fb-name{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
+  .fb-class{font-size:9px;color:var(--accent);background:var(--accent-dim);padding:0 5px;border-radius:3px;font-weight:700;}
+  .fb-hp-track{width:100%;height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:3px;}
+  .fb-hp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),#4ADE80);transition:width 0.8s ease;}
+  .fb-hp-fill.med{background:linear-gradient(90deg,var(--gold),#FB923C);}
+  .fb-hp-fill.low{background:linear-gradient(90deg,var(--red),#F87171);}
+  .fb-stats{display:flex;gap:14px;flex-shrink:0;}
+  .fb-stat{text-align:center;}
+  .fb-stat-val{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;color:var(--text);line-height:1;}
+  .fb-stat-val.k{color:var(--accent);}
+  .fb-stat-label{font-size:8px;color:var(--text-dim);text-transform:uppercase;}
+  .event-log{flex:1;overflow-y:auto;scrollbar-width:none;min-height:0;}
+  .event-log::-webkit-scrollbar{display:none;}
+  .ev{display:flex;align-items:flex-start;gap:8px;padding:9px 14px;border-bottom:1px solid rgba(46,61,79,0.3);animation:evIn 0.3s ease-out;}
+  @keyframes evIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+  .ev.kill{border-left:3px solid var(--accent);}
+  .ev.dmg{border-left:3px solid var(--red);background:rgba(239,68,68,0.04);}
+  .ev.heal{border-left:3px solid var(--green);}
+  .ev.zone{border-left:3px solid var(--gold);}
+  .ev.loot{border-left:3px solid var(--cyan);}
+  .ev.victory{border-left:3px solid var(--gold);background:rgba(245,158,11,0.06);}
+  .ev.death{border-left:3px solid var(--red);background:rgba(239,68,68,0.08);}
+  .ev.move{border-left:3px solid var(--border);}
+  .ev-time{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);min-width:34px;padding-top:2px;}
+  .ev-icon{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;background:rgba(46,61,79,0.3);}
+  .ev-text{font-size:12px;font-weight:600;color:var(--text-sec);line-height:1.3;}
+  .ev-detail{font-size:10px;color:var(--text-dim);margin-top:1px;}
+  .hl{color:var(--accent);font-weight:700;}
+  .hl-c{color:var(--cyan);font-weight:600;}
+  .hl-g{color:var(--green);font-weight:600;}
+  .hl-y{color:var(--gold);font-weight:600;}
+  .battle-bottom{display:flex;justify-content:space-between;align-items:center;padding:8px 14px calc(10px + env(safe-area-inset-bottom));background:var(--bg-deep);flex-shrink:0;border-top:1px solid var(--border);}
+  .speed-btns{display:flex;gap:4px;}
+  .spd{padding:5px 12px;border-radius:4px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;}
+  .spd.on{background:var(--accent);border-color:var(--accent);color:white;}
+
+  /* ══ RESULTS ══ */
+  .placement-hero{text-align:center;padding:24px 16px 18px;position:relative;}
+  .result-label{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;}
+  .placement-num{font-family:'Orbitron',sans-serif;font-size:68px;font-weight:800;line-height:1;animation:slamIn 0.6s cubic-bezier(0.34,1.56,0.64,1);}
+  .placement-num.win{color:var(--gold);text-shadow:0 0 30px var(--gold-glow);}
+  .placement-num.top10{color:var(--green);text-shadow:0 0 20px rgba(34,197,94,0.3);}
+  .placement-num.normal{color:var(--text);}
+  @keyframes slamIn{from{opacity:0;transform:scale(2.5) rotate(-5deg)}60%{transform:scale(0.9) rotate(1deg)}to{opacity:1;transform:scale(1)}}
+  .placement-title{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:700;letter-spacing:3px;margin-top:4px;}
+  .placement-title.win{color:var(--gold);}
+  .placement-title.top10{color:var(--green);}
+  .placement-title.normal{color:var(--text-muted);}
+  .match-meta2{display:flex;justify-content:center;gap:16px;margin-top:10px;}
+  .meta-item{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .meta-item span{color:var(--text-muted);}
+  .res-stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 16px 14px;}
+  .rsg-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+  .rsg-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:var(--text);line-height:1;}
+  .rsg-val.k{color:var(--accent);}.rsg-val.d{color:var(--gold);}.rsg-val.t{color:var(--cyan);}
+  .rsg-label{font-size:10px;color:var(--text-dim);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;}
+  .xp-section{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:0 16px 14px;}
+  .xp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .xp-title{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;}
+  .xp-gain{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--cyan);font-weight:700;}
+  .xp-track{width:100%;height:8px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;}
+  .xp-fill-new{height:100%;background:linear-gradient(90deg,var(--cyan),#38BDF8);border-radius:4px;transition:width 1.5s cubic-bezier(0.4,0,0.2,1);}
+  .xp-labels{display:flex;justify-content:space-between;margin-top:6px;}
+  .xp-lbl{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);}
+  .levelup-banner{display:none;align-items:center;justify-content:center;gap:6px;margin-top:10px;padding:8px;background:var(--gold-dim);border:1px solid rgba(245,158,11,0.3);border-radius:8px;}
+  .levelup-banner.show{display:flex;animation:levelPop 0.4s both;}
+  @keyframes levelPop{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+  .lu-text{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--gold);font-weight:700;letter-spacing:1px;}
+  .rew-grid{display:flex;flex-direction:column;gap:6px;margin:0 16px 14px;}
+  .rew-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+  .rew-left{display:flex;align-items:center;gap:8px;}
+  .rew-name{font-size:13px;font-weight:600;color:var(--text-sec);}
+  .rew-val{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;}
+  .rew-val.coins{color:var(--gold);}.rew-val.xp{color:var(--cyan);}.rew-val.gems{color:var(--purple);}
+  .btn-group{display:flex;flex-direction:column;gap:8px;padding:0 16px 20px;}
+  .btn-primary{width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),var(--accent));border:none;border-radius:10px;color:white;font-size:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 16px var(--accent-glow);}
+  .btn-primary:active{transform:scale(0.97);}
+  .btn-row{display:flex;gap:8px;}
+  .btn-half{flex:1;padding:11px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:12px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;text-align:center;}
+  .btn-half:active{transform:scale(0.95);}
+
+  /* ══ SHOP ══ */
+  .currency-bar{display:flex;gap:8px;}
+  .item-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 14px 14px;}
+  .section-title{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin:14px 14px 10px;}
+  .item-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;cursor:pointer;position:relative;overflow:hidden;}
+  .item-card:active{transform:scale(0.97);}
+  .item-card.legendary{border-color:var(--gold);background:linear-gradient(180deg,rgba(245,158,11,0.06),var(--bg-card));}
+  .item-card.epic{border-color:var(--purple);background:linear-gradient(180deg,rgba(124,58,237,0.06),var(--bg-card));}
+  .item-card.rare{border-color:var(--cyan);background:linear-gradient(180deg,rgba(0,212,255,0.04),var(--bg-card));}
+  .item-icon{width:56px;height:56px;border-radius:10px;background:var(--bg-deep);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 8px;}
+  .item-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;}
+  .item-stat{font-size:10px;color:var(--text-muted);margin-bottom:6px;}
+  .tier-badge{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:9px;padding:1px 6px;border-radius:3px;letter-spacing:0.5px;margin-bottom:6px;}
+  .tier-badge.t1{color:var(--text-muted);background:rgba(100,116,139,0.15);}
+  .tier-badge.t2{color:var(--cyan);background:var(--cyan-dim);}
+  .tier-badge.t3{color:var(--purple);background:var(--purple-dim);}
+  .tier-badge.t4{color:var(--gold);background:var(--gold-dim);}
+  .item-price{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;}
+  .item-price.coins{color:var(--gold);}
+  .item-price.gems{color:var(--purple);}
+  .owned-badge{position:absolute;top:8px;right:8px;font-size:8px;color:var(--green);background:var(--green-dim);padding:1px 6px;border-radius:3px;font-weight:700;letter-spacing:0.5px;}
+
+  /* ══ TASKS ══ */
+  .summary-banner{display:flex;gap:8px;padding:0 16px;margin-bottom:12px;flex-shrink:0;}
+  .sum-card{flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;}
+  .sum-val{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;line-height:1;}
+  .sum-val.done{color:var(--green);}.sum-val.prog{color:var(--gold);}.sum-val.pts{color:var(--cyan);}
+  .sum-label{font-size:11px;color:var(--text-muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+  .task-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 14px 8px;display:flex;align-items:center;gap:10px;position:relative;}
+  .task-card.completed{opacity:0.5;border-style:dashed;}
+  .task-card.claimable{border-color:var(--green);background:linear-gradient(90deg,var(--green-dim),var(--bg-card));}
+  .tc-icon{width:38px;height:38px;border-radius:10px;background:var(--bg-deep);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .tc-info{flex:1;min-width:0;}
+  .tc-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
+  .tc-desc{font-size:12px;color:var(--text-sec);margin-bottom:5px;}
+  .tc-progress{display:flex;align-items:center;gap:6px;}
+  .tc-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+  .tc-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),#FFB366);transition:width 0.5s;}
+  .tc-fill.done{background:linear-gradient(90deg,var(--green),#4ADE80);}
+  .tc-val{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-sec);min-width:36px;text-align:right;font-weight:600;}
+  .tc-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+  .tc-reward{font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;white-space:nowrap;}
+  .tc-reward.coins{color:var(--gold);}.tc-reward.gems{color:var(--purple);}
+  .tc-claim{font-size:10px;font-weight:700;color:var(--bg-deep);background:var(--green);border:none;border-radius:5px;padding:4px 10px;cursor:pointer;letter-spacing:0.5px;text-transform:uppercase;animation:claimPulse 1.5s ease-in-out infinite;}
+  @keyframes claimPulse{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 8px rgba(34,197,94,0.4)}}
+  .tc-done-check{font-size:16px;color:var(--green);}
+  .reset-timer{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);}
+  .reset-timer span{color:var(--cyan);}
+
+  /* ══ LEADERBOARD ══ */
+  .podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin:10px 14px 18px;}
+  .podium-card{display:flex;flex-direction:column;align-items:center;padding:12px 6px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);flex:1;max-width:115px;position:relative;}
+  .podium-card.first{border-color:var(--gold);background:linear-gradient(180deg,rgba(245,158,11,0.1),var(--bg-card));padding-bottom:16px;transform:translateY(-8px);}
+  .podium-card.second{border-color:var(--silver);}
+  .podium-card.third{border-color:var(--bronze);}
+  .pod-crown{position:absolute;top:-14px;font-size:20px;}
+  .pod-rank{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:800;line-height:1;}
+  .pod-rank.r1{color:var(--gold);}.pod-rank.r2{color:var(--silver);}.pod-rank.r3{color:var(--bronze);}
+  .pod-avatar{width:46px;height:46px;border-radius:12px;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;font-size:23px;margin:6px 0;border:2px solid var(--border);}
+  .podium-card.first .pod-avatar{border-color:var(--gold);box-shadow:0 0 12px var(--gold-glow);}
+  .podium-card.second .pod-avatar{border-color:var(--silver);}
+  .podium-card.third .pod-avatar{border-color:var(--bronze);}
+  .pod-name{font-size:12px;font-weight:700;color:var(--text);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .pod-score{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-sec);margin-top:2px;font-weight:600;}
+  .pod-kills{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent);margin-top:1px;}
+  .lb-list{display:flex;flex-direction:column;gap:4px;padding:0 14px 14px;}
+  .lb-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;}
+  .lb-row.me{border-color:var(--accent);background:var(--accent-dim);}
+  .lb-rank{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--text-muted);min-width:32px;text-align:center;}
+  .lb-row.me .lb-rank{color:var(--accent);}
+  .lb-avatar{width:34px;height:34px;border-radius:8px;background:var(--bg-deep);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+  .lb-row.me .lb-avatar{border-color:var(--accent);}
+  .lb-name{font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .lb-row.me .lb-name{color:var(--accent);}
+  .lb-meta{font-size:11px;color:var(--text-muted);display:flex;gap:6px;margin-top:1px;}
+  .lb-tag{font-family:'Share Tech Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;color:var(--cyan);background:var(--cyan-dim);}
+  .lb-stats{display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex-shrink:0;}
+  .lb-score{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;color:var(--text);}
+  .lb-row.me .lb-score{color:var(--accent);}
+  .lb-kills{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);}
+  .lb-info2{flex:1;min-width:0;}
+
+  /* ══ PROFILE ══ */
+  .hero{position:relative;padding:24px 20px 18px;text-align:center;}
+  .hero-avatar{width:80px;height:80px;border-radius:50%;background:var(--bg-deep);border:3px solid var(--accent);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:40px;box-shadow:0 0 25px var(--accent-glow);}
+  .hero-name{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--text);letter-spacing:1px;}
+  .hero-id{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-muted);margin-top:2px;}
+  .hero-level{display:inline-flex;align-items:center;gap:6px;margin-top:8px;}
+  .lvl-badge{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--bg-deep);background:var(--accent);padding:3px 12px;border-radius:6px;}
+  .lvl-xp{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-muted);}
+  .xp-bar{width:200px;height:5px;background:var(--border);border-radius:3px;margin:6px auto 0;overflow:hidden;}
+  .xp-fill{height:100%;background:linear-gradient(90deg,var(--cyan),#38BDF8);border-radius:3px;}
+  .pstats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 16px 8px;}
+  .st-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
+  .st-val{font-family:'Orbitron',sans-serif;font-size:19px;font-weight:700;line-height:1;}
+  .st-label{font-size:11px;color:var(--text-muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;}
+  .st-val.k{color:var(--accent);}.st-val.w{color:var(--gold);}.st-val.r{color:var(--green);}.st-val.g{color:var(--cyan);}.st-val.d{color:var(--text);}.st-val.t{color:var(--purple);}
+  .history-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin:0 16px 6px;}
+  .hi-place{font-family:'Orbitron',sans-serif;font-size:16px;font-weight:800;min-width:40px;text-align:center;}
+  .hi-place.win{color:var(--gold);}.hi-place.top10{color:var(--green);}.hi-place.normal{color:var(--text-muted);}
+  .hi-info{flex:1;min-width:0;}
+  .hi-map{font-size:13px;font-weight:700;color:var(--text);}
+  .hi-meta{font-size:11px;color:var(--text-muted);}
+  .hi-stats{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+  .hi-kills{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--accent);font-weight:700;}
+  .hi-time{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);}
+  .pa-btn{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;cursor:pointer;margin:0 16px 8px;}
+  .pa-btn:active{transform:scale(0.98);}
+  .pa-icon{font-size:18px;width:32px;text-align:center;}
+  .pa-text{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+  .pa-arrow{font-size:14px;color:var(--text-dim);}
+
+  /* ══ REFERRAL ══ */
+  .ref-hero{text-align:center;padding:20px 16px 22px;}
+  .ref-emoji{font-size:48px;margin-bottom:8px;}
+  .ref-title{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:800;color:var(--text);letter-spacing:1px;}
+  .ref-desc{font-size:14px;color:var(--text-sec);margin-top:4px;line-height:1.4;padding:0 10px;}
+  .ref-desc strong{color:var(--gold);}
+  .ref-stats{display:flex;gap:8px;margin:0 16px 16px;}
+  .rs-card{flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
+  .rs-val{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;line-height:1;}
+  .rs-val.inv{color:var(--cyan);}.rs-val.earn{color:var(--gold);}.rs-val.gem{color:var(--purple);}
+  .rs-label{font-size:11px;color:var(--text-muted);margin-top:3px;font-weight:600;}
+  .invite-box{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px;margin:0 16px 16px;}
+  .ib-label{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px;font-weight:600;}
+  .ib-link-row{display:flex;gap:8px;margin-bottom:10px;}
+  .ib-link{flex:1;background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ib-copy{background:var(--cyan);border:none;border-radius:8px;padding:8px 16px;color:var(--bg-deep);font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;}
+  .ib-share{width:100%;padding:12px;background:linear-gradient(135deg,var(--green),#16A34A);border:none;border-radius:10px;color:white;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;}
+  .ib-share:active{transform:scale(0.97);}
+  .tier-card{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px;margin:0 16px 8px;}
+  .tier-card.reached{border-color:var(--green);background:var(--green-dim);}
+  .tier-card.next{border-color:var(--gold);}
+  .tier-icon{width:40px;height:40px;border-radius:50%;background:var(--bg-deep);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  .tier-card.reached .tier-icon{border-color:var(--green);}
+  .tier-card.next .tier-icon{border-color:var(--gold);}
+  .tier-info{flex:1;}
+  .tier-name{font-size:14px;font-weight:700;color:var(--text);}
+  .tier-req{font-size:12px;color:var(--text-muted);}
+  .tier-reward{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:var(--gold);}
+  .tier-check{font-size:16px;color:var(--green);}
+  .friend-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;margin:0 16px 6px;}
+  .fr-avatar{width:34px;height:34px;border-radius:8px;background:var(--bg-deep);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .fr-name{font-size:13px;font-weight:700;color:var(--text);}
+  .fr-meta{font-size:11px;color:var(--text-muted);}
+  .fr-reward{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;margin-left:auto;}
+
+  /* ══ CONFETTI ══ */
+  .celeb-overlay{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:550;}
+  .conf{position:absolute;top:-10px;opacity:0;}
+  .conf.fall{animation:cFall var(--dur,2.5s) cubic-bezier(0.25,0.46,0.45,0.94) forwards;}
+  @keyframes cFall{0%{opacity:1;transform:translateY(0) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translateY(var(--fd,850px)) rotate(var(--fr,720deg)) translateX(var(--dx,0px)) scale(0.15)}}
+  .conf.star{clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+  .conf.diamond{clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="grid-bg"></div>
+
+  <!-- ═══════════ SPLASH ═══════════ -->
+  <div id="splash">
+    <div class="emblem">
+      <div class="emblem-ring"></div>
+      <div class="emblem-ring-inner"></div>
+      <div class="emblem-center">🎯</div>
+    </div>
+    <div class="title-pre">/// tactical warfare ///</div>
+    <div class="title-main"><span class="acc2">DROP</span>ZONE<br>COMMANDER</div>
+    <div class="title-line"></div>
+    <div class="title-sub">Auto Battle Royale Manager</div>
+    <div class="splash-status"><span class="blink"></span><span id="splashStatus">Deploying your squad...</span></div>
+    <div class="loading-track"><div class="loading-fill" id="splashFill"></div></div>
+    <div class="splash-version">v1.0.0 — TELEGRAM MINI APP</div>
+  </div>
+
+  <!-- ═══════════ HOME ═══════════ -->
+  <div class="screen" id="scr-home">
+    <div class="header">
+      <div class="h-user">
+        <div class="h-avatar" id="homeAvatar">🧔</div>
+        <div>
+          <div class="h-name" id="homeName">Commander</div>
+          <span class="h-level" id="homeLevel">Lv.1</span>
+        </div>
+      </div>
+      <div class="h-right">
+        <div class="cur"><span class="cur-icon">🪙</span><span class="cur-val" id="homeCoins">0</span></div>
+        <div class="cur"><span class="cur-icon">💎</span><span class="cur-val" id="homeGems">0</span></div>
+      </div>
+    </div>
+    <div class="content" style="display:flex;flex-direction:column;">
+      <div class="stats-row">
+        <div class="stat-card"><div class="sc-val k" id="homeKills">0</div><div class="sc-label">Total Kills</div></div>
+        <div class="stat-card"><div class="sc-val w" id="homeWins">0</div><div class="sc-label">Victories</div></div>
+        <div class="stat-card"><div class="sc-val r" id="homeTop10">0%</div><div class="sc-label">Top 10 Rate</div></div>
+      </div>
+      <div class="lb-mini" onclick="openLeaderboard()">
+        <span class="lb-icon">🏆</span>
+        <div class="lb-info">
+          <div class="lb-title">Leaderboard</div>
+          <div class="lb-rank-txt">Your Rank: <strong id="homeRank">—</strong> · <span id="homeScore">0</span> pts</div>
+        </div>
+        <span class="lb-arrow">›</span>
+      </div>
+      <div class="lb-mini" id="dailyBanner" style="display:none;border-color:var(--gold);" onclick="openDaily()">
+        <span class="lb-icon">🎁</span>
+        <div class="lb-info">
+          <div class="lb-title" style="color:var(--gold);">Daily Strike Ready!</div>
+          <div class="lb-rank-txt">Claim your daily reward</div>
+        </div>
+        <span class="lb-arrow">›</span>
+      </div>
+      <div class="soldier-area">
+        <div class="soldier-bg"></div>
+        <div class="soldier-glow"></div>
+        <div class="soldier-emoji" id="homeSoldier">🧔</div>
+      </div>
+      <div class="fighter-card-home" id="homeFighterCard">
+        <div class="fc-av" id="hfAvatar">🧔</div>
+        <div class="fc-info">
+          <div class="fc-name" id="hfName">—</div>
+          <div class="fc-meta">
+            <span class="fc-class" id="hfClass">ASSAULT</span>
+            <span class="fc-lv" id="hfLv">Lv.1 · 0 XP</span>
+          </div>
+          <div class="fc-bars">
+            <div class="fbr"><span class="fbr-l">PW</span><div class="fbr-t"><div class="fbr-f pw" id="hfPwBar" style="width:40%"></div></div><span class="fbr-v" id="hfPwVal">40</span></div>
+            <div class="fbr"><span class="fbr-l">XP</span><div class="fbr-t"><div class="fbr-f xp" id="hfXpBar" style="width:0%"></div></div><span class="fbr-v" id="hfXpVal">0%</span></div>
+          </div>
+        </div>
+        <button class="fc-switch" onclick="showScreen('fighters')">Switch ›</button>
+      </div>
+      <div class="deploy-area">
+        <button class="deploy-btn" onclick="openDeploy()">⚔️ DEPLOY TO BATTLE<div class="shimmer"></div></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FIGHTERS ═══════════ -->
+  <div class="screen" id="scr-fighters">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div class="page-title center">MY FIGHTERS</div>
+      <button class="add-btn" onclick="newFighter()">+ NEW</button>
+    </div>
+    <div class="content">
+      <div class="slot-counter">
+        <span class="slot-text" id="slotText">FIGHTER SLOTS: 1 / 4</span>
+        <div class="slot-dots" id="slotDots"></div>
+      </div>
+      <div id="fightersList"></div>
+      <div id="lockedSlots"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FIGHTER DETAIL ═══════════ -->
+  <div class="screen" id="scr-detail">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('fighters')">‹</button>
+      <div class="page-title center" id="detTitle">FIGHTER</div>
+      <span class="h-level" id="detLevel">Lv.1</span>
+    </div>
+    <div class="content">
+      <div class="avatar-showcase">
+        <div class="big-avatar" id="detAvatar">🧔</div>
+        <div class="showcase-name" id="detName">—</div>
+        <div class="showcase-class" id="detClass">Assault Class</div>
+      </div>
+      <div class="stats-grid" id="detStats"></div>
+      <div class="sec-label">Battle Style</div>
+      <div class="style-chips" id="detStyles"></div>
+      <div class="sec-label">Equipped Gear</div>
+      <div id="detGear"></div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ BATTLE LOADING ═══════════ -->
+  <div class="screen" id="scr-loading">
+    <div class="bl-top">
+      <div class="match-label">Deploying to</div>
+      <div class="match-title" id="blMap">ISOLATED</div>
+      <div class="match-meta">
+        <span class="mm">🎮 Mode: <strong id="blMode">Solo</strong></span>
+        <span class="mm">⚡ Risk: <strong id="blRisk">Safe</strong></span>
+      </div>
+    </div>
+    <div style="flex:1;"></div>
+    <div class="tip-area">
+      <div class="tip-label">💡 TIP</div>
+      <div class="tip-text" id="tipText"></div>
+    </div>
+    <div class="loading-section">
+      <div class="load-items" id="loadItems"></div>
+      <div class="prog-header">
+        <span class="prog-label">LOADING BATTLE</span>
+        <span class="prog-pct" id="blPct">0%</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="blFill" style="width:0%"></div></div>
+    </div>
+    <div class="players-bar">
+      <span style="font-size:18px;">👥</span>
+      <span class="pbr-text">Players found:</span>
+      <span class="pbr-count" id="blPlayers">0</span>
+      <span class="pbr-text">/ 100</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ BATTLE WATCH ═══════════ -->
+  <div class="screen" id="scr-battle">
+    <div class="hud-top">
+      <div class="hud-alive"><span style="font-size:14px;">👥</span><span class="alive-num" id="bAlive">100</span><span class="alive-total">/ 100</span></div>
+      <div class="hud-timer"><div class="timer-val" id="bTimer">00:00</div><div class="timer-label">MATCH TIME</div></div>
+      <div class="hud-kills"><span class="kills-num" id="bKills">0</span><span style="font-size:14px;">💀</span></div>
+    </div>
+    <div class="map-area">
+      <canvas id="mapCanvas"></canvas>
+      <div class="placement-badge">Rank <strong id="bPlace">#100</strong></div>
+      <div class="zone-badge"><div class="zone-dot"></div><span id="bZone">Zone 1</span></div>
+      <div class="map-notif" id="bNotif"></div>
+    </div>
+    <div class="fighter-bar">
+      <div class="fb-avatar" id="bAvatar">🧔</div>
+      <div class="fb-info">
+        <div class="fb-name"><span id="bFName">—</span> <span class="fb-class" id="bFClass">AST</span></div>
+        <div class="fb-hp-track"><div class="fb-hp-fill" id="bHpFill" style="width:100%"></div></div>
+      </div>
+      <div class="fb-stats">
+        <div class="fb-stat"><div class="fb-stat-val k" id="bStatK">0</div><div class="fb-stat-label">Kills</div></div>
+        <div class="fb-stat"><div class="fb-stat-val" id="bStatD">0</div><div class="fb-stat-label">DMG</div></div>
+      </div>
+    </div>
+    <div class="event-log" id="eventLog"></div>
+    <div class="battle-bottom">
+      <div class="speed-btns">
+        <div class="spd on" onclick="setSpd(1,this)">1x</div>
+        <div class="spd" onclick="setSpd(2,this)">2x</div>
+        <div class="spd" onclick="setSpd(4,this)">4x</div>
+      </div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);">AUTO-BATTLE SIMULATION</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ RESULTS ═══════════ -->
+  <div class="screen" id="scr-results">
+    <div class="content">
+      <div class="placement-hero">
+        <div class="result-label">Battle Result</div>
+        <div class="placement-num" id="resPlace">#1</div>
+        <div class="placement-title" id="resTitle">MANAGER OF THE ZONE</div>
+        <div class="match-meta2">
+          <div class="meta-item">Duration <span id="resDur">—</span></div>
+          <div class="meta-item">Map <span id="resMap">—</span></div>
+          <div class="meta-item">Mode <span>Solo</span></div>
+        </div>
+      </div>
+      <div class="res-stat-grid">
+        <div class="rsg-card"><div class="rsg-val k" id="resKills">0</div><div class="rsg-label">Kills</div></div>
+        <div class="rsg-card"><div class="rsg-val d" id="resDmg">0</div><div class="rsg-label">Damage</div></div>
+        <div class="rsg-card"><div class="rsg-val t" id="resSurv">0s</div><div class="rsg-label">Survived</div></div>
+      </div>
+      <div class="xp-section">
+        <div class="xp-header">
+          <span class="xp-title">Fighter XP</span>
+          <span class="xp-gain" id="resXpGain">+0 XP</span>
+        </div>
+        <div class="xp-track"><div class="xp-fill-new" id="resXpBar" style="width:0%"></div></div>
+        <div class="xp-labels">
+          <span class="xp-lbl" id="resLvlA">Lv.1</span>
+          <span class="xp-lbl" id="resXpTxt"></span>
+          <span class="xp-lbl" id="resLvlB">Lv.2</span>
+        </div>
+        <div class="levelup-banner" id="resLevelUp"><span style="font-size:18px;">🎖️</span><span class="lu-text" id="resLevelUpTxt">LEVEL UP!</span></div>
+      </div>
+      <div class="sec-label" style="margin-top:0;">Rewards Earned</div>
+      <div class="rew-grid" id="resRewards"></div>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="openDeploy()">⚔️ DEPLOY AGAIN</button>
+        <div class="btn-row">
+          <button class="btn-half" onclick="shareResult()">📤 Share</button>
+          <button class="btn-half" onclick="showScreen('home')">🏠 Home</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SHOP ═══════════ -->
+  <div class="screen" id="scr-shop">
+    <div class="top-bar">
+      <div class="page-title">SHOP</div>
+      <div class="currency-bar">
+        <div class="cur"><span class="cur-icon">🪙</span><span class="cur-val" id="shopCoins">0</span></div>
+        <div class="cur"><span class="cur-icon">💎</span><span class="cur-val" id="shopGems">0</span></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="shopTab('weapons',this)">Weapons</button>
+      <button class="tab" onclick="shopTab('equip',this)">Equipment</button>
+    </div>
+    <div class="content" id="shopContent"></div>
+  </div>
+
+  <!-- ═══════════ TASKS ═══════════ -->
+  <div class="screen" id="scr-tasks">
+    <div class="top-bar">
+      <div class="page-title">TASKS</div>
+      <div class="reset-timer">Resets in <span id="taskTimer">—</span></div>
+    </div>
+    <div class="summary-banner">
+      <div class="sum-card"><div class="sum-val done" id="taskDone">0</div><div class="sum-label">Completed</div></div>
+      <div class="sum-card"><div class="sum-val prog" id="taskProg">0</div><div class="sum-label">In Progress</div></div>
+      <div class="sum-card"><div class="sum-val pts" id="taskClaimable">0</div><div class="sum-label">Claimable</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="taskTab('daily',this)">Daily</button>
+      <button class="tab" onclick="taskTab('weekly',this)">Weekly</button>
+    </div>
+    <div class="content" id="tasksContent" style="padding-top:12px;"></div>
+  </div>
+
+  <!-- ═══════════ LEADERBOARD ═══════════ -->
+  <div class="screen" id="scr-leaderboard">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div class="page-title center">LEADERBOARD</div>
+      <span class="h-level" style="color:var(--purple);background:var(--purple-dim);">🏴 Season 1</span>
+    </div>
+    <div class="content" id="lbContent"></div>
+    <div class="fighter-bar" style="border-top:1px solid var(--border);border-bottom:none;">
+      <span class="lb-rank" id="myRankNum" style="color:var(--accent);">—</span>
+      <div class="fb-avatar" id="myRankAvatar">🧔</div>
+      <div class="fb-info">
+        <div class="fb-name" id="myRankName" style="color:var(--accent);">—</div>
+        <div style="font-size:11px;color:var(--text-muted);" id="myRankMeta">—</div>
+      </div>
+      <span class="lb-score" id="myRankScore" style="color:var(--accent);font-size:16px;">0</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ FRIENDS / REFERRAL ═══════════ -->
+  <div class="screen" id="scr-friends">
+    <div class="top-bar">
+      <div class="page-title">REFERRAL</div>
+    </div>
+    <div class="content">
+      <div class="ref-hero">
+        <div class="ref-emoji">🤝</div>
+        <div class="ref-title">INVITE &amp; EARN</div>
+        <div class="ref-desc">Invite friends to Dropzone Commander and earn <strong>500🪙 + 20💎</strong> for every player who joins!</div>
+      </div>
+      <div class="ref-stats">
+        <div class="rs-card"><div class="rs-val inv" id="refCount">0</div><div class="rs-label">Invited</div></div>
+        <div class="rs-card"><div class="rs-val earn" id="refCoins">0</div><div class="rs-label">Coins Earned</div></div>
+        <div class="rs-card"><div class="rs-val gem" id="refGems">0</div><div class="rs-label">Gems Earned</div></div>
+      </div>
+      <div class="invite-box">
+        <div class="ib-label">YOUR REFERRAL LINK</div>
+        <div class="ib-link-row">
+          <div class="ib-link" id="refLink">t.me/...</div>
+          <button class="ib-copy" onclick="copyRefLink(this)">Copy</button>
+        </div>
+        <button class="ib-share" onclick="shareRefLink()">📱 Share via Telegram</button>
+      </div>
+      <div class="sec-label">Invite Milestones</div>
+      <div id="refTiers"></div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ PROFILE ═══════════ -->
+  <div class="screen" id="scr-profile">
+    <div class="content">
+      <div class="hero">
+        <div class="hero-avatar" id="profAvatar">🧔</div>
+        <div class="hero-name" id="profName">—</div>
+        <div class="hero-id" id="profId">ID: —</div>
+        <div class="hero-level">
+          <span class="lvl-badge" id="profLevel">Lv.1</span>
+          <span class="lvl-xp" id="profXp">0 XP</span>
+        </div>
+        <div class="xp-bar"><div class="xp-fill" id="profXpBar" style="width:0%"></div></div>
+      </div>
+      <div class="sec-label">Lifetime Stats</div>
+      <div class="pstats-grid" id="profStats"></div>
+      <div class="sec-label">Recent Battles</div>
+      <div id="profHistory"></div>
+      <div class="sec-label">More</div>
+      <div class="pa-btn" onclick="showScreen('friends')"><span class="pa-icon">🤝</span><span class="pa-text">Referral Program</span><span class="pa-arrow">›</span></div>
+      <div class="pa-btn" onclick="openLeaderboard()"><span class="pa-icon">🏆</span><span class="pa-text">Leaderboard</span><span class="pa-arrow">›</span></div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ BOTTOM NAV ═══════════ -->
+  <div class="bottom-nav" id="bottomNav">
+    <button class="nav-tab active" data-scr="home" onclick="navTo('home',this)"><i class="fi fi-rr-skull-crossbones nav-icon"></i><span class="nav-label">Main</span></button>
+    <button class="nav-tab" data-scr="tasks" onclick="navTo('tasks',this)"><i class="fi fi-rr-gamepad nav-icon"></i><span class="nav-label">Tasks</span><span class="nav-dot" id="tasksDot"></span></button>
+    <button class="nav-tab" data-scr="shop" onclick="navTo('shop',this)"><i class="fi fi-rr-shopping-bag-add nav-icon"></i><span class="nav-label">Shop</span></button>
+    <button class="nav-tab" data-scr="friends" onclick="navTo('friends',this)"><i class="fi fi-rs-two-swords nav-icon"></i><span class="nav-label">Friends</span></button>
+    <button class="nav-tab" data-scr="profile" onclick="navTo('profile',this)"><i class="fi fi-rr-skull nav-icon"></i><span class="nav-label">Profile</span></button>
+  </div>
+
+  <!-- ═══════════ DEPLOY MODAL ═══════════ -->
+  <div class="modal-overlay" id="deployModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('deployModal')">✕</button>
+      <div class="modal-title">⚔️ BATTLE CONFIG</div>
+      <div class="cfg-sec">
+        <div class="cfg-label">Fighter</div>
+        <div class="cfg-fighter">
+          <div class="cfg-f-av" id="cfgAvatar">🧔</div>
+          <div class="cfg-f-name" id="cfgName">—</div>
+          <span class="cfg-f-meta" id="cfgMeta">—</span>
+        </div>
+      </div>
+      <div class="cfg-sec">
+        <div class="cfg-label">Map</div>
+        <div class="cfg-chips" id="cfgMaps">
+          <div class="chip on" data-v="Isolated" onclick="pickChip(this)">Isolated</div>
+          <div class="chip" data-v="Blackout" onclick="pickChip(this)">Blackout</div>
+          <div class="chip" data-v="Sakura" onclick="pickChip(this)">Sakura</div>
+        </div>
+      </div>
+      <div class="cfg-sec">
+        <div class="cfg-label">Risk Zone <span style="color:var(--text-dim);">— higher risk, higher rewards</span></div>
+        <div class="cfg-chips" id="cfgRisk">
+          <div class="chip green on" data-v="safe" onclick="pickChip(this)">Safe</div>
+          <div class="chip gold" data-v="medium" onclick="pickChip(this)">Medium</div>
+          <div class="chip" data-v="high" onclick="pickChip(this)">High</div>
+          <div class="chip red" data-v="extreme" onclick="pickChip(this)">Extreme</div>
+        </div>
+      </div>
+      <div class="cfg-sec">
+        <div class="cfg-label">Battle Style</div>
+        <div class="cfg-chips" id="cfgStyle">
+          <div class="chip on" data-v="balanced" onclick="pickChip(this)">Balanced</div>
+          <div class="chip" data-v="aggressive" onclick="pickChip(this)">Aggressive</div>
+          <div class="chip" data-v="passive" onclick="pickChip(this)">Passive</div>
+        </div>
+      </div>
+      <button class="start-btn" onclick="startBattle()">⚔️ START BATTLE<div class="shimmer"></div></button>
+    </div>
+  </div>
+
+  <!-- ═══════════ DAILY MODAL ═══════════ -->
+  <div class="modal-overlay" id="dailyModal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" onclick="closeModal('dailyModal')">✕</button>
+      <div class="streak-badge"><span style="font-size:16px;">🔥</span><span class="streak-text" id="streakText">1-DAY STREAK</span></div>
+      <div class="modal-title" style="margin-bottom:4px;">DAILY STRIKE</div>
+      <div style="font-size:14px;color:var(--text-sec);margin-bottom:20px;">Claim your daily reward!</div>
+      <div class="calendar" id="dailyCalendar"></div>
+      <div class="reward-box">
+        <div class="rb-label" id="rbLabel">TODAY'S REWARD</div>
+        <div class="rb-items" id="rbItems"></div>
+      </div>
+      <button class="claim-btn" id="claimBtn" onclick="claimDaily()">🎁 CLAIM REWARD<div class="shimmer"></div></button>
+    </div>
+  </div>
+
+  <div class="celeb-overlay" id="celebOverlay"></div>
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+/* ═══════════ DROPZONE COMMANDER — CLIENT ═══════════ */
+const tg = window.Telegram?.WebApp;
+const BOT_USERNAME = 'dropzonebattlebot';
+const BASE = 'https://hxwhpqpdacqirkhjbfil.supabase.co/functions/v1/dropzone';
+let S = { player:null, fighters:[], purchases:[], tasks:[], recent:[], battle:null };
+
+if (tg) { tg.ready(); tg.expand(); try{ tg.setHeaderColor('#070F1A'); tg.setBackgroundColor('#070F1A'); }catch(e){} try{ tg.disableVerticalSwipes(); }catch(e){} }
+function haptic(t){ try{ tg?.HapticFeedback?.impactOccurred(t||'light'); }catch(e){} }
+function hapticOk(){ try{ tg?.HapticFeedback?.notificationOccurred('success'); }catch(e){} }
+
+/* ── Shared game data (mirrors server) ── */
+const ITEMS = {
+  m16:{name:'M16A4',icon:'🔫',tier:1,cat:'weapons',sect:'Assault Rifles',stat:'PWR +3',c:300,pwr:3},
+  ak47:{name:'AK-47',icon:'🔫',tier:2,cat:'weapons',sect:'Assault Rifles',stat:'PWR +5',c:500,pwr:5},
+  scarh:{name:'SCAR-H',icon:'🔫',tier:3,cat:'weapons',sect:'Assault Rifles',stat:'PWR +9',c:1200,pwr:9},
+  groza:{name:'Groza',icon:'🔫',tier:4,cat:'weapons',sect:'Assault Rifles',stat:'PWR +14',g:200,pwr:14},
+  mini14:{name:'Mini-14',icon:'🎯',tier:2,cat:'weapons',sect:'Snipers',stat:'PWR +6',c:650,pwr:6},
+  awm:{name:'AWM',icon:'🎯',tier:3,cat:'weapons',sect:'Snipers',stat:'PWR +12',g:150,pwr:12},
+  helm2:{name:'Tactical Helm',icon:'🪖',tier:2,cat:'equip',sect:'Helmets',stat:'PWR +3',c:400,pwr:3},
+  helm3:{name:'MICH 2000',icon:'🪖',tier:3,cat:'equip',sect:'Helmets',stat:'PWR +6',c:900,pwr:6},
+  vest2:{name:'Kevlar Vest',icon:'🦺',tier:2,cat:'equip',sect:'Vests',stat:'PWR +4',c:500,pwr:4},
+  vest3:{name:'Plate Carrier',icon:'🦺',tier:3,cat:'equip',sect:'Vests',stat:'PWR +7',c:1100,pwr:7},
+  pack2:{name:'Tactical Pack',icon:'🎒',tier:2,cat:'equip',sect:'Backpacks',stat:'PWR +3',c:450,pwr:3},
+  pack4:{name:'Spec Ops Rig',icon:'🎒',tier:4,cat:'equip',sect:'Backpacks',stat:'PWR +10',g:180,pwr:10},
+  scope:{name:'4x Scope',icon:'🔭',tier:2,cat:'equip',sect:'Attachments',stat:'PWR +2',c:350,pwr:2},
+  supp:{name:'Suppressor',icon:'🔇',tier:2,cat:'equip',sect:'Attachments',stat:'PWR +3',c:400,pwr:3},
+};
+const DAILY_REWARDS = [{c:50},{c:75},{c:100},{c:150,g:5},{c:200},{g:10},{c:500,g:15}];
+const CLASS_LABEL = {assault:'Assault',scout:'Scout',medic:'Medic',marksman:'Marksman'};
+const TIPS = [
+  "Upgrading your fighter's stats helps them survive longer in the zone.",
+  "Higher risk zones pay bigger rewards — if you survive.",
+  "Buy better weapons in the Shop to raise your fighter's Power.",
+  "Passive battle style is best for survival-focused strategies.",
+  "Win battles to climb the global leaderboard.",
+  "Invite friends — every referral earns you 500 coins and 20 gems!"
+];
+
+/* ── Helpers ── */
+const $=id=>document.getElementById(id);
+const fmtN=n=>(n||0).toLocaleString('en-US');
+const fmtT=s=>{const m=Math.floor(s/60);return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
+function toast(msg,cls){const t=$('toast');t.className='toast show'+(cls?' '+cls:'');t.innerHTML=msg;clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2600);}
+function fighterPower(f){const gear=S.purchases.reduce((a,k)=>a+(ITEMS[k]?.pwr||0),0);return Math.round((+f.str + +f.endr + +f.agi + +f.acc + +f.stl)*2 + f.level*3 + gear);}
+function fLvlPct(f){return Math.min(100,Math.round((f.xp-(f.level-1)*800)/800*100));}
+function activeFighter(){return S.fighters.find(f=>f.is_active)||S.fighters[0];}
+
+async function api(path,body){
+  const r=await fetch(BASE+'/api/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:tg?.initData||'',...body})});
+  const j=await r.json();
+  if(!r.ok||j.error)throw new Error(j.error||('HTTP '+r.status));
+  return j;
+}
+
+/* ── Navigation ── */
+let CUR='home';
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('scr-'+id).classList.add('active');
+  CUR=id;
+  const inBattle=['loading','battle','results'].includes(id);
+  $('bottomNav').style.display=inBattle?'none':'flex';
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('active',t.dataset.scr===id));
+  if(id==='home')renderHome();
+  if(id==='fighters')renderFighters();
+  if(id==='shop')renderShop();
+  if(id==='tasks')renderTasks();
+  if(id==='friends')renderFriends();
+  if(id==='profile')renderProfile();
+}
+function navTo(id,el){haptic();showScreen(id);}
+function openLeaderboard(){haptic();showScreen('leaderboard');loadLeaderboard();}
+function closeModal(id){$(id).classList.remove('show');}
+function pickChip(el){el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');haptic();}
+
+/* ── Boot ── */
+async function boot(){
+  $('splashFill').style.width='30%';
+  try{
+    const st=await api('auth',{});
+    Object.assign(S,st);
+    $('splashFill').style.width='100%';
+    $('splashStatus').textContent='Squad ready. Entering the zone...';
+    setTimeout(()=>{
+      $('splash').classList.add('hide');
+      showScreen('home');
+      updateTaskDot();
+      if(S.dailyAvailable){setTimeout(openDaily,500);}
+    },600);
+  }catch(e){
+    $('splashStatus').textContent='Connection failed — retrying...';
+    setTimeout(boot,2500);
+  }
+}
+
+/* ── HOME ── */
+function renderHome(){
+  const p=S.player;if(!p)return;
+  $('homeAvatar').textContent=p.avatar;$('homeName').textContent=p.display_name;
+  $('homeLevel').textContent='Lv.'+p.level;
+  $('homeCoins').textContent=fmtN(p.coins);$('homeGems').textContent=fmtN(p.gems);
+  $('homeKills').textContent=fmtN(p.kills);$('homeWins').textContent=fmtN(p.victories);
+  $('homeTop10').textContent=(p.battles_count?Math.round(p.top10_count/p.battles_count*100):0)+'%';
+  $('homeRank').textContent=S.myRank?('#'+fmtN(S.myRank)):'—';
+  $('homeScore').textContent=fmtN(p.score);
+  $('dailyBanner').style.display=S.dailyAvailable?'flex':'none';
+  const f=activeFighter();if(!f)return;
+  $('homeSoldier').textContent=f.avatar;
+  $('hfAvatar').textContent=f.avatar;$('hfName').textContent=f.name;
+  $('hfClass').textContent=CLASS_LABEL[f.class].toUpperCase();
+  $('hfLv').textContent='Lv.'+f.level+' · '+fmtN(f.xp)+' XP';
+  const pw=fighterPower(f);
+  $('hfPwBar').style.width=Math.min(100,pw/1.6)+'%';$('hfPwVal').textContent=pw;
+  $('hfXpBar').style.width=fLvlPct(f)+'%';$('hfXpVal').textContent=fLvlPct(f)+'%';
+}
+
+/* ── FIGHTERS ── */
+const STAT_KEYS=[['str','STR'],['endr','END'],['agi','AGI'],['acc','ACC'],['stl','STL']];
+function renderFighters(){
+  const list=$('fightersList');list.innerHTML='';
+  $('slotText').textContent='FIGHTER SLOTS: '+S.fighters.length+' / 4';
+  $('slotDots').innerHTML=[0,1,2,3].map(i=>'<div class="slot-dot'+(i<S.fighters.length?' filled':'')+'"></div>').join('');
+  S.fighters.forEach(f=>{
+    const card=document.createElement('div');
+    card.className='fighter-card'+(f.is_active?' active-fighter':'');
+    card.innerHTML=(f.is_active?'<span class="active-badge">★ ACTIVE</span>':'')+
+      '<div class="fc-top"><div class="fc-avatar">'+f.avatar+'<span class="fc-level-badge">Lv.'+f.level+'</span></div>'+
+      '<div style="flex:1;min-width:0;"><div class="fc-name2">'+f.name+'</div><span class="fc-class2 '+f.class+'">'+CLASS_LABEL[f.class]+'</span>'+
+      '<div class="stat-bars">'+STAT_KEYS.map(([k,l])=>'<div class="sbar-row"><span class="sbar-label">'+l+'</span><div class="sbar-track"><div class="sbar-fill '+k+'" style="width:'+(+f[k]*10)+'%"></div></div><span class="sbar-val">'+(+f[k]).toFixed(1)+'</span></div>').join('')+
+      '</div></div></div>'+
+      '<button class="fc-manage" onclick="openDetail(\''+f.id+'\')">Manage →</button>'+
+      (!f.is_active?'<button class="fc-set-active" onclick="setActive(\''+f.id+'\')">★ Set Active</button>':'');
+    list.appendChild(card);
+  });
+  const locked=$('lockedSlots');locked.innerHTML='';
+  if(S.fighters.length<2)locked.innerHTML+='<div class="locked-card"><div class="lock-icon">➕</div><div class="lock-text">Fighter Slot 2</div><span class="lock-req">Recruit for 1,000 🪙</span></div>';
+  if(S.fighters.length<3)locked.innerHTML+='<div class="locked-card"><div class="lock-icon">🔒</div><div class="lock-text">Fighter Slot 3</div><span class="lock-req">Coming soon</span></div>';
+  if(S.fighters.length<4)locked.innerHTML+='<div class="locked-card"><div class="lock-icon">🔒</div><div class="lock-text">Fighter Slot 4</div><span class="lock-req">Coming soon</span></div>';
+}
+async function setActive(id){
+  haptic();
+  try{const r=await api('fighter',{action:'activate',fighterId:id});S.fighters=r.fighters;renderFighters();toast('✓ Active fighter changed','green');}
+  catch(e){toast(e.message,'red');}
+}
+async function newFighter(){
+  haptic();
+  if(S.fighters.length>=2){toast('More slots coming soon!','');return;}
+  if(S.player.coins<1000){toast('Need 1,000 🪙 to recruit','red');return;}
+  try{const r=await api('fighter',{action:'create'});S.fighters=r.fighters;S.player=r.player;renderFighters();hapticOk();toast('🎖️ New fighter recruited!','green');}
+  catch(e){toast(e.message,'red');}
+}
+let DET=null;
+function openDetail(id){
+  haptic();
+  DET=S.fighters.find(f=>f.id===id);if(!DET)return;
+  $('detTitle').textContent=DET.name.toUpperCase();
+  $('detLevel').textContent='Lv.'+DET.level;
+  $('detAvatar').textContent=DET.avatar;$('detName').textContent=DET.name;
+  $('detClass').textContent=CLASS_LABEL[DET.class]+' Class · Power '+fighterPower(DET);
+  $('detStats').innerHTML=STAT_KEYS.map(([k,l])=>'<div class="sg-row"><span class="sg-label">'+l+'</span><div class="sg-track"><div class="sg-fill '+k+' sbar-fill" style="width:'+(+DET[k]*10)+'%"></div></div><span class="sg-val">'+(+DET[k]).toFixed(1)+'</span></div>').join('');
+  $('detStyles').innerHTML=['balanced','aggressive','passive','zone hugger'].map(s=>{
+    const v=s.replace(' ','_');
+    return '<div class="style-chip'+(DET.battle_style===v?' active':'')+'" onclick="setStyle(\''+v+'\',this)">'+s.charAt(0).toUpperCase()+s.slice(1)+'</div>';
+  }).join('');
+  const gear=S.purchases.map(k=>ITEMS[k]).filter(Boolean);
+  $('detGear').innerHTML=gear.length?gear.map(g=>'<div class="gear-row"><div class="gear-icon">'+g.icon+'</div><div><div class="gear-name">'+g.name+'</div><div class="gear-stat">'+g.stat+' · Tier '+g.tier+'</div></div><span class="gear-pwr">+'+g.pwr+' PWR</span></div>').join('')
+    :'<div class="empty-state"><div class="empty-icon">🎒</div><div class="empty-text">No gear yet — visit the Shop to equip your fighter</div></div>';
+  showScreen('detail');
+}
+async function setStyle(v,el){
+  el.parentElement.querySelectorAll('.style-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');haptic();
+  try{await api('fighter',{action:'style',fighterId:DET.id,style:v});DET.battle_style=v;}catch(e){}
+}
+
+/* ── DAILY STRIKE ── */
+function openDaily(){
+  const p=S.player;
+  const nextDay=S.dailyAvailable?(S.nextStreakDay||1):p.streak_day;
+  $('streakText').textContent=(p.streak_day||0)+'-DAY STREAK';
+  $('dailyCalendar').innerHTML=DAILY_REWARDS.map((r,i)=>{
+    const d=i+1;
+    let cls='day';let inner=d;
+    if(S.dailyAvailable){ if(d<nextDay){cls+=' claimed';inner='✓';} else if(d===nextDay){cls+=' today';inner='🎁';} }
+    else { if(d<=p.streak_day){cls+=' claimed';inner='✓';} }
+    const rw=(r.c?r.c+'🪙':'')+(r.g?(r.c?' ':'')+r.g+'💎':'');
+    return '<div class="'+cls+'"><div class="day-label">Day '+d+'</div><div class="day-circle">'+inner+'</div><div class="day-reward">'+rw+'</div></div>';
+  }).join('');
+  const r=DAILY_REWARDS[(S.dailyAvailable?nextDay:p.streak_day)-1]||DAILY_REWARDS[0];
+  $('rbItems').innerHTML=(r.c?'<div><div class="rb-icon">🪙</div><div class="rb-val">'+r.c+'</div><div class="rb-name">Coins</div></div>':'')+
+    (r.g?'<div><div class="rb-icon">💎</div><div class="rb-val">'+r.g+'</div><div class="rb-name">Gems</div></div>':'')+
+    '<div><div class="rb-icon">⭐</div><div class="rb-val">50</div><div class="rb-name">XP</div></div>';
+  const btn=$('claimBtn');
+  if(S.dailyAvailable){btn.className='claim-btn';btn.innerHTML='🎁 CLAIM REWARD<div class="shimmer"></div>';btn.disabled=false;$('rbLabel').textContent="TODAY'S REWARD";}
+  else{btn.className='claim-btn done';btn.textContent='✓ Come Back Tomorrow';btn.disabled=true;$('rbLabel').textContent='✓ REWARD CLAIMED';}
+  $('dailyModal').classList.add('show');
+}
+async function claimDaily(){
+  if(!S.dailyAvailable)return;
+  haptic('medium');
+  try{
+    const r=await api('daily',{});
+    S.player=r.player;S.dailyAvailable=false;S.tasks=r.tasks||S.tasks;
+    hapticOk();confetti(60);
+    openDaily();renderHome();updateTaskDot();
+    toast('🔥 Daily reward claimed! +'+(r.reward.c||0)+'🪙'+(r.reward.g?' +'+r.reward.g+'💎':''),'green');
+  }catch(e){toast(e.message,'red');}
+}
+
+/* ── DEPLOY / BATTLE ── */
+function openDeploy(){
+  haptic();
+  const f=activeFighter();if(!f){toast('No fighter available','red');return;}
+  $('cfgAvatar').textContent=f.avatar;$('cfgName').textContent=f.name;
+  $('cfgMeta').textContent=CLASS_LABEL[f.class].slice(0,3).toUpperCase()+' · Lv.'+f.level;
+  $('deployModal').classList.add('show');
+}
+const chipVal=id=>document.querySelector('#'+id+' .chip.on')?.dataset.v;
+let BTL=null;
+async function startBattle(){
+  haptic('medium');
+  closeModal('deployModal');
+  const f=activeFighter();
+  const cfg={fighterId:f.id,map:chipVal('cfgMaps'),risk:chipVal('cfgRisk'),style:chipVal('cfgStyle')};
+  showScreen('loading');
+  $('blMap').textContent=cfg.map.toUpperCase();
+  $('blMode').textContent='Solo';
+  $('blRisk').textContent=cfg.risk.charAt(0).toUpperCase()+cfg.risk.slice(1);
+  let serverRes=null,serverErr=null;
+  api('battle',cfg).then(r=>serverRes=r).catch(e=>serverErr=e);
+  runLoadingAnim(()=>{
+    const wait=setInterval(()=>{
+      if(serverErr){clearInterval(wait);toast(serverErr.message,'red');showScreen('home');}
+      if(serverRes){clearInterval(wait);BTL=serverRes;startWatch(serverRes,cfg,f);}
+    },150);
+  });
+}
+function runLoadingAnim(done){
+  const stages=[['🗺️','Loading Map',900],['🔫','Loading Equipment',800],['🧔','Preparing Fighter',700],['👥','Matching Players',1300],['🌐','Connecting to Server',800],['⚡','Initializing Battle',800]];
+  const li=$('loadItems');
+  li.innerHTML=stages.map((s,i)=>'<div class="load-item" id="li'+i+'"><span class="li-icon">'+s[0]+'</span><span class="li-text">'+s[1]+'</span><span class="li-status" id="ls'+i+'">Waiting</span></div>').join('');
+  $('tipText').textContent=TIPS[Math.floor(Math.random()*TIPS.length)];
+  let tipIv=setInterval(()=>{$('tipText').textContent=TIPS[Math.floor(Math.random()*TIPS.length)];},3500);
+  let pc=0;const totalMs=stages.reduce((a,s)=>a+s[2],0);
+  let pIv=setInterval(()=>{pc=Math.min(100,pc+2.2);$('blPlayers').textContent=Math.round(pc);if(pc>=100)clearInterval(pIv);},totalMs/48);
+  let idx=0,pctDone=0;
+  function next(){
+    if(idx>=stages.length){clearInterval(tipIv);$('blPct').textContent='100%';$('blFill').style.width='100%';setTimeout(done,300);return;}
+    const el=$('li'+idx),st=$('ls'+idx);
+    el.classList.add('active');st.textContent='Loading...';
+    const dur=stages[idx][2];const endPct=Math.round((stages.slice(0,idx+1).reduce((a,s)=>a+s[2],0))/totalMs*100);
+    const steps=10;let s=0;
+    const iv=setInterval(()=>{
+      s++;const p=Math.round(pctDone+(endPct-pctDone)*(s/steps));
+      $('blPct').textContent=p+'%';$('blFill').style.width=p+'%';
+      if(s>=steps){clearInterval(iv);pctDone=endPct;el.classList.remove('active');el.classList.add('done');st.textContent='Done ✓';idx++;next();}
+    },dur/steps);
+  }
+  next();
+}
+
+/* ── BATTLE WATCH ── */
+const BW={t:0,speed:1,running:false,events:[],alive:100,kills:0,dmg:0,hp:100,zone:1,enemies:[],fighter:{x:0,y:0},trail:[],iv:null};
+const BOT_NAMES=['SniperX_42','RushBot_77','GhostPro_99','NightHawk_AZ','ProGamer_TR','SavageKing','FinalBoss_99','EliteSniper','VenomQueen','ColdSteel_RU','StormBringer','IronFist_UA','BlazeRunner','TacticalMind','WarMachine_GE','PhoenixRise'];
+function pickNames(n){const a=[...BOT_NAMES].sort(()=>Math.random()-0.5);return a.slice(0,n);}
+function buildScript(res){
+  const ev=[];const dur=res.battle.duration;const kills=res.battle.kills;const place=res.battle.placement;
+  const win=place===1, dead=place>1;
+  const names=pickNames(kills+3);
+  ev.push({t:3,type:'loot',icon:'🪂',text:'Parachute deployed!',detail:'Landing at '+['Ecology Lab','Killhouse','Downtown','Radar Base'][Math.floor(Math.random()*4)]+' sector'});
+  ev.push({t:7,type:'loot',icon:'📦',text:'Found <span class="hl-c">'+(S.purchases.length?ITEMS[S.purchases[0]].name:'M16A4')+'</span>',detail:'Equipped as primary weapon'});
+  ev.push({t:12,type:'move',icon:'🏃',text:'Moving toward safe zone',detail:'Rotation started'});
+  const kStart=20,kEnd=dur-15;
+  for(let i=0;i<kills;i++){
+    const t=Math.round(kStart+(kEnd-kStart)*((i+0.5)/kills)+(Math.random()*10-5));
+    const dmg=120+Math.floor(Math.random()*100);
+    ev.push({t,type:'kill',icon:'💀',name:names[i],dmg,text:'<span class="hl">'+names[i]+'</span> eliminated!',detail:dmg+' damage dealt',notif:'💀 KILL — '+names[i]});
+  }
+  const hits=2+Math.floor(Math.random()*3);
+  const finalHp=dead?0:30+Math.floor(Math.random()*55);
+  for(let i=0;i<hits;i++){
+    const t=Math.round(25+(dur-40)*((i+0.5)/hits)+(Math.random()*8-4));
+    const loss=Math.round((100-finalHp)/hits);
+    ev.push({t,type:'dmg',icon:'⚔️',hpLoss:loss,text:'Firefight with <span class="hl">'+names[kills+i%3]+'</span>',detail:'-'+loss+' HP received'});
+  }
+  if(Math.random()>0.4&&!dead)ev.push({t:Math.round(dur*0.5),type:'heal',icon:'💚',heal:20,text:'<span class="hl-g">Medkit</span> used',detail:'+20 HP restored'});
+  [[0.25,2],[0.5,3],[0.7,4],[0.85,5]].forEach(([f,z])=>{ if(dur*f<dur-8)ev.push({t:Math.round(dur*f),type:'zone',zone:z,icon:'⚠️',text:'<span class="hl-y">Zone '+z+' closing!</span>',detail:'Move to safe zone'}); });
+  if(place<=15)ev.push({t:Math.round(dur*0.78),type:'zone',icon:'🔥',text:'<span class="hl-y">Top 15! Final zones!</span>',detail:'Zone closing rapidly',notif:'🔥 TOP 15'});
+  if(place<=10)ev.push({t:Math.round(dur*0.85),type:'zone',icon:'🏆',text:'<span class="hl-y">Top 10 reached!</span>',detail:'Stay sharp',notif:'🏆 TOP 10'});
+  if(win){
+    ev.push({t:dur,type:'victory',icon:'🏆',text:'<span style="color:#FBBF24;font-size:14px;font-weight:800;">MANAGER OF THE ZONE!</span>',detail:kills+' kills — Victory!',notif:'🏆 VICTORY!'});
+  } else {
+    ev.push({t:dur,type:'death',icon:'☠️',text:'<span style="color:#EF4444;font-weight:800;">Fighter eliminated</span>',detail:'Finished #'+place+' of 100',notif:'☠️ ELIMINATED — #'+place});
+  }
+  return ev.sort((a,b)=>a.t-b.t);
+}
+function startWatch(res,cfg,f){
+  showScreen('battle');
+  BW.t=0;BW.speed=1;BW.kills=0;BW.dmg=0;BW.hp=100;BW.zone=1;BW.alive=100;BW.trail=[];BW.done=false;
+  BW.events=buildScript(res);BW.res=res;BW.dur=res.battle.duration;BW.place=res.battle.placement;
+  $('bAvatar').textContent=f.avatar;$('bFName').textContent=f.name;
+  $('bFClass').textContent=CLASS_LABEL[f.class].slice(0,3).toUpperCase();
+  $('eventLog').innerHTML='';$('bKills').textContent='0';$('bStatK').textContent='0';$('bStatD').textContent='0';
+  $('bHpFill').style.width='100%';$('bHpFill').className='fb-hp-fill';$('bAlive').textContent='100';$('bPlace').textContent='#100';$('bZone').textContent='Zone 1';
+  document.querySelectorAll('.spd').forEach((b,i)=>b.classList.toggle('on',i===0));
+  initCanvas();
+  BW.running=true;
+  clearInterval(BW.iv);
+  BW.iv=setInterval(btick,1000);
+}
+function setSpd(s,el){BW.speed=s;document.querySelectorAll('.spd').forEach(b=>b.classList.remove('on'));el.classList.add('on');haptic();}
+function btick(){
+  if(!BW.running)return;
+  for(let i=0;i<BW.speed;i++){
+    if(BW.t>=BW.dur){finishBattle();return;}
+    BW.t++;
+    $('bTimer').textContent=fmtT(BW.t);
+    BW.events.filter(e=>e.t===BW.t).forEach(applyEvent);
+    const prog=BW.t/BW.dur;
+    const targetAlive=Math.max(BW.place===1?1:BW.place,Math.round(100-99*Math.pow(prog,0.8)));
+    if(targetAlive<BW.alive){BW.alive=targetAlive;$('bAlive').textContent=BW.alive;$('bPlace').textContent='#'+BW.alive;}
+    moveSim();
+  }
+  render();
+}
+function applyEvent(e){
+  addEv(e.type,e.icon,e.text,e.detail);
+  if(e.notif)showNotif(e.notif);
+  if(e.type==='kill'){BW.kills++;BW.dmg+=e.dmg;$('bKills').textContent=BW.kills;$('bStatK').textContent=BW.kills;$('bStatD').textContent=BW.dmg;killDot();haptic();}
+  if(e.type==='dmg'){BW.hp=Math.max(5,BW.hp-e.hpLoss);updHp();}
+  if(e.type==='heal'){BW.hp=Math.min(100,BW.hp+e.heal);updHp();}
+  if(e.type==='zone'&&e.zone){BW.zone=e.zone;$('bZone').textContent='Zone '+e.zone;}
+  if(e.type==='death'){BW.hp=0;updHp();}
+  if(e.type==='victory'||e.type==='death'){hapticOk();}
+}
+function updHp(){const b=$('bHpFill');b.style.width=BW.hp+'%';b.className='fb-hp-fill'+(BW.hp<30?' low':BW.hp<60?' med':'');}
+function addEv(type,icon,text,detail){
+  const log=$('eventLog');const d=document.createElement('div');
+  d.className='ev '+type;
+  d.innerHTML='<span class="ev-time">'+fmtT(BW.t)+'</span><div class="ev-icon">'+icon+'</div><div style="flex:1;"><div class="ev-text">'+text+'</div>'+(detail?'<div class="ev-detail">'+detail+'</div>':'')+'</div>';
+  log.insertBefore(d,log.firstChild);
+  if(log.children.length>30)log.removeChild(log.lastChild);
+}
+function showNotif(t){const n=$('bNotif');n.textContent=t;n.classList.remove('show');void n.offsetWidth;n.classList.add('show');}
+function finishBattle(){
+  BW.running=false;clearInterval(BW.iv);
+  setTimeout(showResults,1400);
+}
+
+/* ── CANVAS ── */
+let ctx,CW,CH;
+const LOCS=[[0.1,0.08,'RADAR BASE'],[0.77,0.07,'DORMITORY'],[0.41,0.16,'NUCLEAR PLANT'],[0.79,0.27,'SAKURA'],[0.13,0.38,'BLACK MARKET'],[0.51,0.32,'OVERGROWN'],[0.31,0.54,'BUS STATION'],[0.77,0.54,'KILLHOUSE'],[0.13,0.7,'DOWNTOWN'],[0.51,0.68,'LAUNCH BASE'],[0.82,0.76,'CRASH SITE'],[0.26,0.86,'PIPELINE'],[0.77,0.92,'ECOLOGY LAB']];
+function initCanvas(){
+  const cvs=$('mapCanvas');const r=cvs.parentElement.getBoundingClientRect();
+  CW=cvs.width=r.width;CH=cvs.height=r.height;
+  ctx=cvs.getContext('2d');
+  BW.fighter={x:CW*0.78,y:CH*0.85};
+  BW.enemies=[];
+  for(let i=0;i<45;i++)BW.enemies.push({x:CW*0.05+Math.random()*CW*0.9,y:CH*0.05+Math.random()*CH*0.9,alive:true,dx:(Math.random()-0.5)*3,dy:(Math.random()-0.5)*3});
+  render();
+}
+function zoneCfg(){
+  const zs=[[0.5,0.5,0.48],[0.51,0.46,0.38],[0.49,0.42,0.29],[0.47,0.41,0.2],[0.47,0.4,0.13],[0.47,0.39,0.07]];
+  const z=zs[Math.min(BW.zone-1,5)];
+  return {cx:z[0]*CW,cy:z[1]*CH,r:z[2]*Math.min(CW,CH)*1.6};
+}
+function moveSim(){
+  const z=zoneCfg();
+  const f=BW.fighter;
+  f.x+=(z.cx+(Math.random()-0.5)*30-f.x)*0.04;
+  f.y+=(z.cy+(Math.random()-0.5)*30-f.y)*0.04;
+  if(BW.t%4===0)BW.trail.push({x:f.x,y:f.y});
+  if(BW.trail.length>50)BW.trail.shift();
+  BW.enemies.forEach(e=>{
+    if(!e.alive)return;
+    e.x+=e.dx+(Math.random()-0.5)*1.5;e.y+=e.dy+(Math.random()-0.5)*1.5;
+    e.x=Math.max(5,Math.min(CW-5,e.x));e.y=Math.max(5,Math.min(CH-5,e.y));
+    if(Math.random()<0.02){e.dx=(Math.random()-0.5)*3;e.dy=(Math.random()-0.5)*3;}
+  });
+  const aliveDots=BW.enemies.filter(e=>e.alive).length;
+  const want=Math.round(BW.alive/100*45);
+  for(let i=0;i<aliveDots-want;i++){const e=BW.enemies.find(x=>x.alive);if(e)e.alive=false;}
+}
+function killDot(){const e=BW.enemies.find(x=>x.alive);if(e)e.alive=false;}
+function render(){
+  if(!ctx)return;
+  ctx.clearRect(0,0,CW,CH);
+  ctx.fillStyle='#0A1220';ctx.fillRect(0,0,CW,CH);
+  ctx.strokeStyle='rgba(0,212,255,0.04)';ctx.lineWidth=0.5;
+  for(let x=0;x<CW;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();}
+  for(let y=0;y<CH;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();}
+  ctx.font='8px "Share Tech Mono"';ctx.fillStyle='rgba(255,255,255,0.12)';
+  LOCS.forEach(l=>ctx.fillText(l[2],l[0]*CW,l[1]*CH));
+  const z=zoneCfg();
+  ctx.beginPath();ctx.arc(z.cx,z.cy,z.r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(0,212,255,0.5)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='rgba(0,212,255,0.02)';ctx.fill();
+  ctx.save();ctx.beginPath();ctx.rect(0,0,CW,CH);ctx.arc(z.cx,z.cy,z.r,0,Math.PI*2,true);ctx.fillStyle='rgba(239,68,68,0.05)';ctx.fill();ctx.restore();
+  if(BW.trail.length>1){
+    ctx.beginPath();ctx.moveTo(BW.trail[0].x,BW.trail[0].y);
+    BW.trail.forEach(p=>ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='rgba(34,197,94,0.3)';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+  }
+  BW.enemies.forEach(e=>{
+    if(!e.alive){ctx.fillStyle='rgba(100,116,139,0.15)';ctx.beginPath();ctx.arc(e.x,e.y,2,0,Math.PI*2);ctx.fill();return;}
+    ctx.fillStyle='rgba(239,68,68,0.7)';ctx.beginPath();ctx.arc(e.x,e.y,3,0,Math.PI*2);ctx.fill();
+  });
+  const f=BW.fighter;
+  ctx.fillStyle='rgba(34,197,94,0.12)';ctx.beginPath();ctx.arc(f.x,f.y,14,0,Math.PI*2);ctx.fill();
+  const pulse=0.5+Math.sin(Date.now()/500)*0.5;
+  ctx.strokeStyle='rgba(34,197,94,'+(0.3*pulse)+')';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(f.x,f.y,10+pulse*6,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#22C55E';ctx.beginPath();ctx.arc(f.x,f.y,5,0,Math.PI*2);ctx.fill();
+  ctx.font='bold 8px Rajdhani';ctx.fillStyle='rgba(34,197,94,0.8)';ctx.fillText('YOU',f.x-9,f.y-10);
+}
+
+/* ── RESULTS ── */
+function showResults(){
+  const r=BTL;const b=r.battle;
+  const win=b.placement===1,top10=b.placement<=10;
+  $('resPlace').textContent='#'+b.placement;
+  $('resPlace').className='placement-num '+(win?'win':top10?'top10':'normal');
+  $('resTitle').textContent=win?'MANAGER OF THE ZONE':top10?'TOP 10 FINISH':'BETTER LUCK NEXT DROP';
+  $('resTitle').className='placement-title '+(win?'win':top10?'top10':'normal');
+  $('resDur').textContent=fmtT(b.duration);$('resMap').textContent=b.map;
+  animNum('resKills',b.kills);animNum('resDmg',b.damage);
+  $('resSurv').textContent=b.duration+'s';
+  $('resXpGain').textContent='+'+b.xp_gain+' XP';
+  const f=r.fighter;
+  const before=r.fighterBefore||{level:f.level,xp:f.xp-b.xp_gain};
+  $('resLvlA').textContent='Lv.'+before.level;$('resLvlB').textContent='Lv.'+(before.level+1);
+  $('resXpTxt').textContent=fmtN(before.xp)+' → '+fmtN(f.xp)+' XP';
+  $('resXpBar').style.width=Math.min(100,Math.round((before.xp-(before.level-1)*800)/800*100))+'%';
+  setTimeout(()=>{$('resXpBar').style.width=Math.min(100,Math.round((f.xp-(before.level-1)*800)/800*100))+'%';},600);
+  const lu=$('resLevelUp');
+  if(f.level>before.level){lu.classList.add('show');$('resLevelUpTxt').textContent='LEVEL UP! → Lv.'+f.level;}
+  else lu.classList.remove('show');
+  const rows=[];
+  if(win)rows.push(['🪙','Victory Bonus','coins','+'+Math.round(b.coins_gain*0.55)]);
+  if(b.kills)rows.push(['🪙','Kill Rewards ('+b.kills+')','coins','+'+(win?b.coins_gain-Math.round(b.coins_gain*0.55):Math.round(b.coins_gain*0.7))]);
+  rows.push(['🪙','Total Coins','coins','+'+b.coins_gain]);
+  if(b.gems_gain)rows.push(['💎','Gem Bonus','gems','+'+b.gems_gain]);
+  rows.push(['⭐','Battle XP','xp','+'+b.xp_gain]);
+  $('resRewards').innerHTML=rows.map(x=>'<div class="rew-row"><div class="rew-left"><span style="font-size:16px;">'+x[0]+'</span><span class="rew-name">'+x[1]+'</span></div><span class="rew-val '+x[2]+'">'+x[3]+'</span></div>').join('');
+  S.player=r.player;
+  S.fighters=S.fighters.map(x=>x.id===f.id?f:x);
+  S.tasks=r.tasks||S.tasks;
+  S.myRank=r.myRank||S.myRank;
+  if(r.recent)S.recent=r.recent;
+  updateTaskDot();
+  showScreen('results');
+  if(win)setTimeout(()=>confetti(60),500);
+}
+function animNum(id,target){
+  const el=$(id);const start=Date.now();const dur=1100;
+  (function tick(){const p=Math.min(1,(Date.now()-start)/dur);el.textContent=Math.floor(target*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tick);})();
+}
+function shareResult(){
+  const b=BTL?.battle;if(!b)return;
+  const txt=b.placement===1?'🏆 I just WON a battle royale in Dropzone Commander! '+b.kills+' kills!':'⚔️ I placed #'+b.placement+' with '+b.kills+' kills in Dropzone Commander!';
+  const url='https://t.me/'+BOT_USERNAME+'?startapp=ref_'+S.player.tg_id;
+  tg?.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(url)+'&text='+encodeURIComponent(txt));
+}
+
+/* ── SHOP ── */
+let SHOP_TAB='weapons';
+function shopTab(t,el){SHOP_TAB=t;document.querySelectorAll('#scr-shop .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderShop();haptic();}
+function renderShop(){
+  $('shopCoins').textContent=fmtN(S.player.coins);$('shopGems').textContent=fmtN(S.player.gems);
+  const sections={};
+  Object.entries(ITEMS).filter(([k,v])=>v.cat===SHOP_TAB).forEach(([k,v])=>{(sections[v.sect]=sections[v.sect]||[]).push([k,v]);});
+  let html='';
+  for(const [sect,items] of Object.entries(sections)){
+    html+='<div class="section-title">'+sect+'</div><div class="item-grid">';
+    items.forEach(([k,v])=>{
+      const owned=S.purchases.includes(k);
+      const rarity=v.tier>=4?'legendary':v.tier===3?'epic':v.tier===2?'rare':'';
+      html+='<div class="item-card '+rarity+'" onclick="buyItem(\''+k+'\')">'+(owned?'<span class="owned-badge">OWNED</span>':'')+
+        '<div class="item-icon">'+v.icon+'</div><span class="tier-badge t'+v.tier+'">TIER '+v.tier+'</span>'+
+        '<div class="item-name">'+v.name+'</div><div class="item-stat">'+v.stat+'</div>'+
+        '<div class="item-price '+(v.g?'gems':'coins')+'">'+(v.g?'💎 '+fmtN(v.g):'🪙 '+fmtN(v.c))+'</div></div>';
+    });
+    html+='</div>';
+  }
+  $('shopContent').innerHTML=html+'<div style="height:10px;"></div>';
+}
+async function buyItem(k){
+  haptic();
+  const v=ITEMS[k];
+  if(S.purchases.includes(k)){toast('Already owned','');return;}
+  if(v.c&&S.player.coins<v.c){toast('Not enough coins','red');return;}
+  if(v.g&&S.player.gems<v.g){toast('Not enough gems','red');return;}
+  try{
+    const r=await api('buy',{itemKey:k});
+    S.player=r.player;S.purchases=r.purchases;
+    hapticOk();renderShop();
+    toast('✓ '+v.name+' purchased! '+v.stat,'green');
+  }catch(e){toast(e.message,'red');}
+}
+
+/* ── TASKS ── */
+let TASK_TAB='daily';
+function taskTab(t,el){TASK_TAB=t;document.querySelectorAll('#scr-tasks .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderTasks();haptic();}
+function renderTasks(){
+  const list=S.tasks.filter(t=>t.period===TASK_TAB);
+  const all=S.tasks;
+  $('taskDone').textContent=all.filter(t=>t.claimed).length;
+  $('taskProg').textContent=all.filter(t=>!t.claimed&&t.progress<t.target).length;
+  $('taskClaimable').textContent=all.filter(t=>!t.claimed&&t.progress>=t.target).length;
+  const claimable=list.filter(t=>!t.claimed&&t.progress>=t.target);
+  const inprog=list.filter(t=>!t.claimed&&t.progress<t.target);
+  const donez=list.filter(t=>t.claimed);
+  let html='';
+  const card=t=>{
+    const done=t.progress>=t.target;
+    const pct=Math.min(100,Math.round(t.progress/t.target*100));
+    const rew=(t.c?'+'+t.c+'🪙':'')+(t.g?(t.c?' ':'')+'+'+t.g+'💎':'');
+    return '<div class="task-card'+(t.claimed?' completed':done?' claimable':'')+'">'+
+      '<div class="tc-icon">'+t.icon+'</div><div class="tc-info"><div class="tc-name">'+t.name+'</div><div class="tc-desc">'+t.desc+'</div>'+
+      '<div class="tc-progress"><div class="tc-track"><div class="tc-fill'+(done?' done':'')+'" style="width:'+pct+'%"></div></div><span class="tc-val">'+Math.min(t.progress,t.target)+'/'+t.target+'</span></div></div>'+
+      '<div class="tc-right">'+(t.claimed?'<span class="tc-done-check">✓</span>':done?'<button class="tc-claim" onclick="claimTask(\''+t.key+'\')">Claim</button>':'<span class="tc-reward '+(t.g?'gems':'coins')+'">'+rew+'</span>')+'</div></div>';
+  };
+  claimable.forEach(t=>html+=card(t));
+  inprog.forEach(t=>html+=card(t));
+  if(donez.length){html+='<div class="sec-label" style="margin-left:14px;margin-right:14px;">Completed</div>';donez.forEach(t=>html+=card(t));}
+  $('tasksContent').innerHTML=html+'<div style="height:10px;"></div>';
+  startTaskTimer();
+}
+async function claimTask(key){
+  haptic('medium');
+  try{
+    const r=await api('task',{taskKey:key});
+    S.player=r.player;S.tasks=r.tasks;
+    hapticOk();confetti(35);renderTasks();updateTaskDot();
+    toast('✓ Task reward claimed!','green');
+  }catch(e){toast(e.message,'red');}
+}
+function updateTaskDot(){
+  const has=S.tasks.some(t=>!t.claimed&&t.progress>=t.target);
+  $('tasksDot').classList.toggle('show',has);
+}
+let taskTmIv=null;
+function startTaskTimer(){
+  clearInterval(taskTmIv);
+  function upd(){
+    const now=new Date();
+    const mid=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()+1));
+    let rem=Math.floor((mid-now)/1000);
+    const h=Math.floor(rem/3600),m=Math.floor((rem%3600)/60),s=rem%60;
+    const el=$('taskTimer');if(el)el.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  upd();taskTmIv=setInterval(upd,1000);
+}
+
+/* ── LEADERBOARD ── */
+async function loadLeaderboard(){
+  $('lbContent').innerHTML='<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Loading rankings...</div></div>';
+  try{
+    const r=await api('leaderboard',{});
+    S.myRank=r.myRank;
+    const rows=r.rows||[];
+    let html='';
+    if(rows.length>=3){
+      const [a,b,c]=rows;
+      html+='<div class="podium">'+
+        podCard(b,'second','r2','')+podCard(a,'first','r1','<div class="pod-crown">👑</div>')+podCard(c,'third','r3','')+
+        '</div>';
+    }
+    html+='<div class="lb-list">';
+    rows.slice(3).forEach(x=>{
+      const me=x.tg_id===S.player.tg_id;
+      html+='<div class="lb-row'+(me?' me':'')+'"><span class="lb-rank">'+x.rank+'</span><div class="lb-avatar">'+x.avatar+'</div>'+
+        '<div class="lb-info2"><div class="lb-name">'+esc(x.name)+(me?' ← YOU':'')+'</div><div class="lb-meta"><span class="lb-tag">Lv.'+x.level+'</span></div></div>'+
+        '<div class="lb-stats"><span class="lb-score">'+fmtN(x.score)+'</span><span class="lb-kills">💀 '+fmtN(x.kills)+'</span></div></div>';
+    });
+    html+='</div>';
+    $('lbContent').innerHTML=html;
+    const p=S.player;
+    $('myRankNum').textContent='#'+fmtN(r.myRank||0);
+    $('myRankAvatar').textContent=p.avatar;$('myRankName').textContent=p.display_name;
+    $('myRankMeta').textContent='Lv.'+p.level+' · '+fmtN(p.kills)+' kills · '+fmtN(p.victories)+' wins';
+    $('myRankScore').textContent=fmtN(p.score);
+  }catch(e){$('lbContent').innerHTML='<div class="empty-state"><div class="empty-text">Failed to load</div></div>';}
+}
+function podCard(x,cls,rcls,extra){
+  if(!x)return '';
+  return '<div class="podium-card '+cls+'">'+extra+'<div class="pod-rank '+rcls+'">#'+x.rank+'</div><div class="pod-avatar">'+x.avatar+'</div><div class="pod-name">'+esc(x.name)+'</div><div class="pod-score">'+fmtN(x.score)+' pts</div><div class="pod-kills">💀 '+fmtN(x.kills)+'</div></div>';
+}
+function esc(s){return String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+
+/* ── FRIENDS / REFERRAL ── */
+const REF_TIERS=[[1,'First Invite','🎯','+500🪙'],[3,'Squad Builder','⚡','+1,500🪙'],[5,'Recruiter','🔥','+100💎'],[10,'Commander','🏅','+250💎'],[25,'Warlord','👑','+1,000💎']];
+function renderFriends(){
+  const p=S.player;
+  $('refCount').textContent=p.ref_count;
+  $('refCoins').textContent=fmtN(p.ref_coins);
+  $('refGems').textContent=fmtN(p.ref_gems);
+  $('refLink').textContent='t.me/'+BOT_USERNAME+'?startapp=ref_'+p.tg_id;
+  let next=true;
+  $('refTiers').innerHTML=REF_TIERS.map(([n,name,icon,rew])=>{
+    const reached=p.ref_count>=n;
+    let cls='tier-card'+(reached?' reached':'');
+    if(!reached&&next){cls+=' next';next=false;}
+    return '<div class="'+cls+'"><div class="tier-icon">'+icon+'</div><div class="tier-info"><div class="tier-name">'+name+'</div><div class="tier-req">Invite '+n+' friend'+(n>1?'s':'')+' ('+Math.min(p.ref_count,n)+'/'+n+')</div></div>'+(reached?'<span class="tier-check">✓</span>':'<span class="tier-reward">'+rew+'</span>')+'</div>';
+  }).join('');
+}
+function refUrl(){return 'https://t.me/'+BOT_USERNAME+'?startapp=ref_'+S.player.tg_id;}
+function copyRefLink(btn){
+  navigator.clipboard?.writeText(refUrl()).then(()=>{btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',1500);hapticOk();});
+}
+function shareRefLink(){
+  haptic();
+  const txt='⚔️ Join me in Dropzone Commander — build your fighter and battle for the top of the zone! You get a bonus when you join 🎁';
+  tg?.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(refUrl())+'&text='+encodeURIComponent(txt));
+}
+
+/* ── PROFILE ── */
+function renderProfile(){
+  const p=S.player;
+  $('profAvatar').textContent=p.avatar;$('profName').textContent=p.display_name;
+  $('profId').textContent='ID: #DC-'+p.tg_id;
+  $('profLevel').textContent='Lv.'+p.level;
+  const lvlBase=(p.level-1)*1000;
+  $('profXp').textContent=fmtN(p.xp)+' / '+fmtN(p.level*1000)+' XP';
+  $('profXpBar').style.width=Math.min(100,Math.round((p.xp-lvlBase)/1000*100))+'%';
+  const winRate=p.battles_count?Math.round(p.victories/p.battles_count*1000)/10:0;
+  const kd=p.battles_count?Math.round(p.kills/Math.max(1,p.battles_count-p.victories)*100)/100:0;
+  const top10=p.battles_count?Math.round(p.top10_count/p.battles_count*100):0;
+  $('profStats').innerHTML=
+    '<div class="st-card"><div class="st-val d">'+fmtN(p.battles_count)+'</div><div class="st-label">Battles</div></div>'+
+    '<div class="st-card"><div class="st-val w">'+fmtN(p.victories)+'</div><div class="st-label">Victories</div></div>'+
+    '<div class="st-card"><div class="st-val r">'+winRate+'%</div><div class="st-label">Win Rate</div></div>'+
+    '<div class="st-card"><div class="st-val k">'+fmtN(p.kills)+'</div><div class="st-label">Total Kills</div></div>'+
+    '<div class="st-card"><div class="st-val g">'+kd+'</div><div class="st-label">K/D Ratio</div></div>'+
+    '<div class="st-card"><div class="st-val t">'+top10+'%</div><div class="st-label">Top 10</div></div>';
+  $('profHistory').innerHTML=(S.recent&&S.recent.length)?S.recent.map(b=>{
+    const cls=b.placement===1?'win':b.placement<=10?'top10':'normal';
+    return '<div class="history-item"><div class="hi-place '+cls+'">#'+b.placement+'</div><div class="hi-info"><div class="hi-map">'+b.map+' — Solo</div><div class="hi-meta">'+timeAgo(b.created_at)+'</div></div><div class="hi-stats"><div class="hi-kills">'+b.kills+' kills</div><div class="hi-time">'+fmtT(b.duration)+'</div></div></div>';
+  }).join(''):'<div class="empty-state"><div class="empty-icon">⚔️</div><div class="empty-text">No battles yet — deploy your fighter!</div></div>';
+}
+function timeAgo(ts){
+  const s=Math.floor((Date.now()-new Date(ts).getTime())/1000);
+  if(s<60)return 'just now';
+  if(s<3600)return Math.floor(s/60)+' min ago';
+  if(s<86400)return Math.floor(s/3600)+' hours ago';
+  return Math.floor(s/86400)+' days ago';
+}
+
+/* ── CONFETTI ── */
+function confetti(count){
+  const o=$('celebOverlay');
+  const colors=['#F59E0B','#FBBF24','#22C55E','#4ADE80','#00D4FF','#7C3AED','#A78BFA','#F97316'];
+  const shapes=['','star','diamond'];
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div');
+    const sh=shapes[Math.floor(Math.random()*shapes.length)];
+    p.className='conf'+(sh?' '+sh:'');
+    p.style.left=Math.random()*100+'%';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    const sz=sh?7+Math.random()*9:4+Math.random()*8;
+    p.style.width=sz+'px';p.style.height=(sh?sz:sz*0.6)+'px';
+    if(!sh)p.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    p.style.setProperty('--dur',(2+Math.random()*2.5)+'s');
+    p.style.setProperty('--fd',(window.innerHeight*0.8+Math.random()*200)+'px');
+    p.style.setProperty('--fr',(360+Math.random()*720)+'deg');
+    p.style.setProperty('--dx',(-80+Math.random()*160)+'px');
+    p.style.animationDelay=Math.random()*0.5+'s';
+    o.appendChild(p);
+    requestAnimationFrame(()=>p.classList.add('fall'));
+    setTimeout(()=>p.remove(),5500);
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
