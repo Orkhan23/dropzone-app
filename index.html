@@ -566,6 +566,37 @@
   .im-stars{width:100%;padding:13px;background:linear-gradient(135deg,#F59E0B,#D97706);border:none;border-radius:10px;color:var(--bg-deep);font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 14px var(--gold-glow);}
   .im-stars:active{transform:scale(0.97);}
   .im-owned{padding:12px;background:var(--green-dim);border:1px solid var(--green);border-radius:10px;color:var(--green);font-weight:700;}
+
+  /* ══ BATTLE FOOTER v2 ══ */
+  .battle-bottom{gap:6px;}
+  .bb-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 2px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);cursor:pointer;position:relative;}
+  .bb-btn:active{transform:scale(0.93);}
+  .bb-icon{font-size:18px;line-height:1;}
+  .bb-label{font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;}
+  .bb-count{position:absolute;top:-5px;right:8px;min-width:16px;height:16px;border-radius:8px;background:var(--green);color:var(--bg-deep);font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+  .bb-btn.airdrop{border-color:var(--gold);background:var(--gold-dim);animation:adPulse 1.2s ease-in-out infinite;}
+  .bb-btn.airdrop .bb-label{color:var(--gold);}
+  @keyframes adPulse{0%,100%{box-shadow:0 0 0 transparent}50%{box-shadow:0 0 14px var(--gold-glow)}}
+
+  /* ══ BATTLE MODALS ══ */
+  .wpn-bar-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .wpn-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--accent));border-radius:2px;transition:width 1s linear;}
+  .wpn-sec{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;margin:12px 0 6px;text-align:left;}
+  .wpn-row{display:flex;align-items:center;gap:10px;background:var(--bg-deep);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;}
+  .wpn-row:active{transform:scale(0.97);}
+  .wpn-row.on{border-color:var(--green);background:var(--green-dim);}
+  .wpn-icon{font-size:22px;width:32px;text-align:center;}
+  .wpn-name{font-size:14px;font-weight:700;color:var(--text);}
+  .wpn-type{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-muted);}
+  .med-row{display:flex;align-items:center;gap:10px;background:var(--bg-deep);border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;}
+  .med-row:active{transform:scale(0.97);}
+  .med-row.dis{opacity:0.38;}
+  .med-count{font-family:'Share Tech Mono',monospace;font-size:13px;font-weight:700;color:var(--cyan);}
+  .spd-row{display:flex;align-items:center;gap:12px;background:var(--bg-deep);border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:6px;cursor:pointer;}
+  .spd-row:active{transform:scale(0.97);}
+  .spd-row.on{border-color:var(--green);background:var(--green-dim);}
+  .spd-x{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:800;color:var(--cyan);min-width:36px;}
+  .chip.lk{opacity:0.35;cursor:default;}
 </style>
 </head>
 <body>
@@ -747,12 +778,11 @@
     </div>
     <div class="event-log" id="eventLog"></div>
     <div class="battle-bottom">
-      <div class="speed-btns">
-        <div class="spd on" onclick="setSpd(1,this)">1x</div>
-        <div class="spd" onclick="setSpd(2,this)">2x</div>
-        <div class="spd" onclick="setSpd(4,this)">4x</div>
-      </div>
-      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);">AUTO-BATTLE SIMULATION</span>
+      <button class="bb-btn" onclick="openWeaponModal()"><span class="bb-icon">🔫</span><span class="bb-label">Weapon</span></button>
+      <button class="bb-btn" onclick="openHealthModal()"><span class="bb-icon">💊</span><span class="bb-label">Health</span><span class="bb-count" id="bbHealthCount">12</span></button>
+      <button class="bb-btn" onclick="openEquipModal()"><span class="bb-icon">🦺</span><span class="bb-label">Equip</span></button>
+      <button class="bb-btn" onclick="openSpeedModal()"><span class="bb-icon">⚡</span><span class="bb-label" id="bbSpeedLabel">x1</span></button>
+      <button class="bb-btn airdrop" id="bbAirdrop" onclick="collectAirdrop()" style="display:none;"><span class="bb-icon">📦</span><span class="bb-label">AIRDROP</span></button>
     </div>
   </div>
 
@@ -970,6 +1000,62 @@
         <div class="rb-items" id="rbItems"></div>
       </div>
       <button class="claim-btn" id="claimBtn" onclick="claimDaily()">🎁 CLAIM REWARD<div class="shimmer"></div></button>
+    </div>
+  </div>
+
+  <!-- ═══════════ WEAPON MODAL (pauses game) ═══════════ -->
+  <div class="modal-overlay" id="weaponModal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" onclick="closeWeaponModal()">✕</button>
+      <div class="modal-title" style="margin-bottom:2px;">🔫 CHOOSE WEAPON</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--gold);margin-bottom:8px;">⏸ GAME PAUSED — <span id="wpnTimer">5</span>s</div>
+      <div class="wpn-bar-track"><div class="wpn-bar" id="wpnBar" style="width:100%"></div></div>
+      <div id="wpnList" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ HEALTH MODAL ═══════════ -->
+  <div class="modal-overlay" id="healthModal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" onclick="closeModal('healthModal')">✕</button>
+      <div class="modal-title" style="margin-bottom:2px;">💊 MED BAG</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green);margin-bottom:12px;">Current HP: <span id="medHp">100%</span></div>
+      <div id="medList"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ EQUIPMENT MODAL ═══════════ -->
+  <div class="modal-overlay" id="equipModal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" onclick="closeModal('equipModal')">✕</button>
+      <div class="modal-title" style="margin-bottom:2px;">🦺 EQUIPMENT</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);margin-bottom:12px;" id="eqDef">16% damage reduction</div>
+      <div class="cfg-label" style="text-align:left;">Vest</div>
+      <div class="cfg-chips" id="eqVest" style="margin-bottom:12px;"></div>
+      <div class="cfg-label" style="text-align:left;">Helmet</div>
+      <div class="cfg-chips" id="eqHelm" style="margin-bottom:14px;"></div>
+      <div class="cfg-label" style="text-align:left;">Tactical Utilities</div>
+      <div id="eqUtils"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SPEED MODAL ═══════════ -->
+  <div class="modal-overlay" id="speedModal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" onclick="closeModal('speedModal')">✕</button>
+      <div class="modal-title" style="margin-bottom:12px;">⚡ BATTLE SPEED</div>
+      <div id="speedOpts"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ AIRDROP MODAL ═══════════ -->
+  <div class="modal-overlay" id="airdropModal">
+    <div class="modal" style="text-align:center;">
+      <div class="item-icon" id="adIcon" style="width:80px;height:80px;font-size:42px;margin:6px auto 12px;border-color:var(--gold);box-shadow:0 0 20px var(--gold-glow);">📦</div>
+      <div class="modal-title" style="margin-bottom:6px;" id="adName">Opening crate...</div>
+      <div id="adDesc" style="font-size:13px;color:var(--text-sec);line-height:1.45;margin-bottom:10px;"></div>
+      <div id="adBonus" style="font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--gold);margin-bottom:14px;"></div>
+      <button class="im-buy" onclick="closeAirdropModal()">CONTINUE BATTLE</button>
     </div>
   </div>
 
@@ -1252,62 +1338,98 @@ function runLoadingAnim(done){
 }
 
 /* ── BATTLE WATCH ── */
-const BW={t:0,speed:1,running:false,events:[],alive:100,kills:0,dmg:0,hp:100,zone:1,enemies:[],fighter:{x:0,y:0},trail:[],iv:null};
+const BW={t:0,speed:1,running:false,paused:false,events:[],alive:100,kills:0,dmg:0,hp:100,zone:1,enemies:[],fighter:{x:0,y:0},trail:[],iv:null,
+  weapon:null,def:0.16,meds:{},gear:{},super:false,crate:null,x2paid:false,x4ok:false,airdropDone:false};
 const BOT_NAMES=['SniperX_42','RushBot_77','GhostPro_99','NightHawk_AZ','ProGamer_TR','SavageKing','FinalBoss_99','EliteSniper','VenomQueen','ColdSteel_RU','StormBringer','IronFist_UA','BlazeRunner','TacticalMind','WarMachine_GE','PhoenixRise'];
 function pickNames(n){const a=[...BOT_NAMES].sort(()=>Math.random()-0.5);return a.slice(0,n);}
+const MEDS={
+  bandage:{name:'Bandage',icon:'🩹',desc:'+10 HP (heals up to 75)',cap:75},
+  firstaid:{name:'First Aid Kit',icon:'🧰',desc:'Restore HP to 75',cap:75},
+  medkit:{name:'Med Kit',icon:'⛑️',desc:'Full restore to 100 HP',cap:100},
+  energy:{name:'Energy Drink',icon:'🥤',desc:'+23 HP boost (up to 100)',cap:100},
+  painkiller:{name:'Painkiller',icon:'💊',desc:'+35 HP boost (up to 100)',cap:100},
+  adren:{name:'Adrenaline Syringe',icon:'💉',desc:'+60 HP boost (up to 100)',cap:100}
+};
+const AIRDROP_INFO={
+  supergun:{icon:'🎯',name:'AWM-X Prototype',desc:'Super gun! Massive damage for the rest of this battle.'},
+  vest4:{icon:'🦺',name:'Level 4 Vest',desc:'Airdrop-exclusive armor. Damage taken greatly reduced.'},
+  helm4:{icon:'🪖',name:'Level 4 Helmet',desc:'Airdrop-exclusive helmet. Damage taken greatly reduced.'},
+  fullkit:{icon:'⛑️',name:'Full Aid Kit',desc:'HP fully restored + 1 Med Kit added to your bag.'}
+};
 function buildScript(res){
   const ev=[];const dur=res.battle.duration;const kills=res.battle.kills;const place=res.battle.placement;
-  const win=place===1, dead=place>1;
+  const win=place===1,dead=place>1;
   const names=pickNames(kills+3);
   ev.push({t:3,type:'loot',icon:'🪂',text:'Parachute deployed!',detail:'Landing at '+['Ecology Lab','Killhouse','Downtown','Radar Base'][Math.floor(Math.random()*4)]+' sector'});
-  ev.push({t:7,type:'loot',icon:'📦',text:'Found <span class="hl-c">'+(S.purchases.length?ITEMS[S.purchases[0]].name:'M16A4')+'</span>',detail:'Equipped as primary weapon'});
+  ev.push({t:7,type:'loot',icon:'📦',text:'Found <span class="hl-c">'+(S.purchases.length?ITEMS[S.purchases[0]].name:'Standard AR')+'</span>',detail:'Equipped as primary weapon'});
   ev.push({t:12,type:'move',icon:'🏃',text:'Moving toward safe zone',detail:'Rotation started'});
   const kStart=20,kEnd=dur-15;
   for(let i=0;i<kills;i++){
     const t=Math.round(kStart+(kEnd-kStart)*((i+0.5)/kills)+(Math.random()*10-5));
     const dmg=120+Math.floor(Math.random()*100);
-    ev.push({t,type:'kill',icon:'💀',name:names[i],dmg,text:'<span class="hl">'+names[i]+'</span> eliminated!',detail:dmg+' damage dealt',notif:'💀 KILL — '+names[i]});
+    ev.push({t,type:'kill',icon:'💀',name:names[i],dmg,text:'<span class="hl">'+names[i]+'</span> eliminated!',notif:'💀 KILL — '+names[i]});
   }
   const hits=2+Math.floor(Math.random()*3);
   const finalHp=dead?0:30+Math.floor(Math.random()*55);
   for(let i=0;i<hits;i++){
     const t=Math.round(25+(dur-40)*((i+0.5)/hits)+(Math.random()*8-4));
-    const loss=Math.round((100-finalHp)/hits);
-    ev.push({t,type:'dmg',icon:'⚔️',hpLoss:loss,text:'Firefight with <span class="hl">'+names[kills+i%3]+'</span>',detail:'-'+loss+' HP received'});
+    const loss=Math.round((100-finalHp)/hits)+10;
+    ev.push({t,type:'dmg',icon:'⚔️',hpLoss:loss,text:'Firefight with <span class="hl">'+names[(kills+i)%names.length]+'</span>'});
   }
-  if(Math.random()>0.4&&!dead)ev.push({t:Math.round(dur*0.5),type:'heal',icon:'💚',heal:20,text:'<span class="hl-g">Medkit</span> used',detail:'+20 HP restored'});
-  [[0.25,2],[0.5,3],[0.7,4],[0.85,5]].forEach(([f,z])=>{ if(dur*f<dur-8)ev.push({t:Math.round(dur*f),type:'zone',zone:z,icon:'⚠️',text:'<span class="hl-y">Zone '+z+' closing!</span>',detail:'Move to safe zone'}); });
+  ev.push({t:Math.round(dur*0.35),type:'loot',icon:'🩹',text:'Found <span class="hl-g">Bandage x2</span>',detail:'Added to your med bag',pickup:{bandage:2}});
+  if(dur>120)ev.push({t:Math.round(dur*0.6),type:'loot',icon:'🥤',text:'Found <span class="hl-g">Energy Drink</span>',detail:'Added to your med bag',pickup:{energy:1}});
+  [[0.25,2],[0.5,3],[0.7,4],[0.85,5]].forEach(([fr,z])=>{ if(dur*fr<dur-8)ev.push({t:Math.round(dur*fr),type:'zone',zone:z,icon:'⚠️',text:'<span class="hl-y">Zone '+z+' closing!</span>',detail:'Move to safe zone'}); });
   if(place<=15)ev.push({t:Math.round(dur*0.78),type:'zone',icon:'🔥',text:'<span class="hl-y">Top 15! Final zones!</span>',detail:'Zone closing rapidly',notif:'🔥 TOP 15'});
   if(place<=10)ev.push({t:Math.round(dur*0.85),type:'zone',icon:'🏆',text:'<span class="hl-y">Top 10 reached!</span>',detail:'Stay sharp',notif:'🏆 TOP 10'});
-  if(win){
-    ev.push({t:dur,type:'victory',icon:'🏆',text:'<span style="color:#FBBF24;font-size:14px;font-weight:800;">MANAGER OF THE ZONE!</span>',detail:kills+' kills — Victory!',notif:'🏆 VICTORY!'});
-  } else {
-    ev.push({t:dur,type:'death',icon:'☠️',text:'<span style="color:#EF4444;font-weight:800;">Fighter eliminated</span>',detail:'Finished #'+place+' of 100',notif:'☠️ ELIMINATED — #'+place});
-  }
+  if(win)ev.push({t:dur,type:'victory',icon:'🏆',text:'<span style="color:#FBBF24;font-size:14px;font-weight:800;">MANAGER OF THE ZONE!</span>',detail:kills+' kills — Victory!',notif:'🏆 VICTORY!'});
+  else ev.push({t:dur,type:'death',icon:'☠️',text:'<span style="color:#EF4444;font-weight:800;">Fighter eliminated</span>',detail:'Finished #'+place+' of 100',notif:'☠️ ELIMINATED — #'+place});
   return ev.sort((a,b)=>a.t-b.t);
+}
+function ownedVestLv(){return S.purchases.includes('vest3')?3:S.purchases.includes('vest2')?2:1;}
+function ownedHelmLv(){return S.purchases.includes('helm3')?3:S.purchases.includes('helm2')?2:1;}
+function calcDef(){BW.def=Math.min(0.64,(BW.gear.vest+BW.gear.helm)*0.08);}
+function weaponChoices(){
+  const prim=[];
+  const autos=['m16','ak47','scarh','groza'].filter(k=>S.purchases.includes(k));
+  const snipers=['mini14','awm'].filter(k=>S.purchases.includes(k));
+  if(!autos.length)prim.push({name:'Standard AR',icon:'🔫',mod:1,type:'Automatic'});
+  autos.forEach(k=>prim.push({name:ITEMS[k].name,icon:'🔫',mod:1+ITEMS[k].pwr/50,type:'Automatic'}));
+  snipers.forEach(k=>prim.push({name:ITEMS[k].name,icon:'🎯',mod:1.3+ITEMS[k].pwr/50,type:'Sniper'}));
+  return prim;
 }
 function startWatch(res,cfg,f){
   showScreen('battle');
-  BW.t=0;BW.speed=1;BW.kills=0;BW.dmg=0;BW.hp=100;BW.zone=1;BW.alive=100;BW.trail=[];BW.done=false;
+  BW.t=0;BW.speed=1;BW.kills=0;BW.dmg=0;BW.hp=100;BW.zone=1;BW.alive=100;BW.trail=[];BW.paused=false;
+  BW.super=false;BW.crate=null;BW.x2paid=false;BW.x4ok=false;BW.airdropDone=false;
+  BW.meds={bandage:5,firstaid:2,medkit:1,energy:2,painkiller:1,adren:1};
+  BW.gear={vest:ownedVestLv(),helm:ownedHelmLv(),drone:1,shell:1,rocket:1};
+  calcDef();
+  const prim=weaponChoices();
+  BW.weapon=prim[prim.length-1];
   BW.events=buildScript(res);BW.res=res;BW.dur=res.battle.duration;BW.place=res.battle.placement;
+  BTL.airdropBonus=null;
   $('bAvatar').textContent=f.avatar;$('bFName').textContent=f.name;
   $('bFClass').textContent=CLASS_LABEL[f.class].slice(0,3).toUpperCase();
   $('eventLog').innerHTML='';$('bKills').textContent='0';$('bStatK').textContent='0';$('bStatD').textContent='0';
   $('bHpFill').style.width='100%';$('bHpFill').className='fb-hp-fill';$('bAlive').textContent='100';$('bPlace').textContent='#100';$('bZone').textContent='Zone 1';
-  document.querySelectorAll('.spd').forEach((b,i)=>b.classList.toggle('on',i===0));
+  $('bbAirdrop').style.display='none';
+  $('bbSpeedLabel').textContent='x1';
+  updHealthCount();
   initCanvas();
   BW.running=true;
   clearInterval(BW.iv);
   BW.iv=setInterval(btick,1000);
 }
-function setSpd(s,el){BW.speed=s;document.querySelectorAll('.spd').forEach(b=>b.classList.remove('on'));el.classList.add('on');haptic();}
+function setSpd(s){BW.speed=s;$('bbSpeedLabel').textContent='x'+s;}
 function btick(){
   if(!BW.running)return;
+  if(BW.paused){render();return;}
   for(let i=0;i<BW.speed;i++){
     if(BW.t>=BW.dur){finishBattle();return;}
     BW.t++;
     $('bTimer').textContent=fmtT(BW.t);
     BW.events.filter(e=>e.t===BW.t).forEach(applyEvent);
+    if(BTL.airdrop&&!BW.airdropDone&&BW.t===BTL.airdrop.t)spawnAirdrop();
     const prog=BW.t/BW.dur;
     const targetAlive=Math.max(BW.place===1?1:BW.place,Math.round(100-99*Math.pow(prog,0.8)));
     if(targetAlive<BW.alive){BW.alive=targetAlive;$('bAlive').textContent=BW.alive;$('bPlace').textContent='#'+BW.alive;}
@@ -1316,11 +1438,23 @@ function btick(){
   render();
 }
 function applyEvent(e){
-  addEv(e.type,e.icon,e.text,e.detail);
+  let detail=e.detail;
+  if(e.type==='kill'){
+    const wname=BW.super?'AWM-X Prototype':BW.weapon.name;
+    const shown=Math.round(e.dmg*BW.weapon.mod)+(BW.super?80:0);
+    detail=shown+' damage dealt — '+wname;
+    BW.kills++;BW.dmg+=shown;
+    $('bKills').textContent=BW.kills;$('bStatK').textContent=BW.kills;$('bStatD').textContent=BW.dmg;
+    killDot();haptic();
+  }
+  if(e.type==='dmg'){
+    const loss=Math.max(3,Math.round(e.hpLoss*(1-BW.def)));
+    detail='-'+loss+' HP received'+(BW.def>0.16?' (armor absorbed '+Math.round(BW.def*100)+'%)':'');
+    BW.hp=Math.max(BW.place>1?5:8,BW.hp-loss);updHp();
+  }
+  if(e.pickup){for(const k in e.pickup){BW.meds[k]=(BW.meds[k]||0)+e.pickup[k];}updHealthCount();}
+  addEv(e.type,e.icon,e.text,detail);
   if(e.notif)showNotif(e.notif);
-  if(e.type==='kill'){BW.kills++;BW.dmg+=e.dmg;$('bKills').textContent=BW.kills;$('bStatK').textContent=BW.kills;$('bStatD').textContent=BW.dmg;killDot();haptic();}
-  if(e.type==='dmg'){BW.hp=Math.max(5,BW.hp-e.hpLoss);updHp();}
-  if(e.type==='heal'){BW.hp=Math.min(100,BW.hp+e.heal);updHp();}
   if(e.type==='zone'&&e.zone){BW.zone=e.zone;$('bZone').textContent='Zone '+e.zone;}
   if(e.type==='death'){BW.hp=0;updHp();}
   if(e.type==='victory'||e.type==='death'){hapticOk();}
@@ -1337,6 +1471,231 @@ function showNotif(t){const n=$('bNotif');n.textContent=t;n.classList.remove('sh
 function finishBattle(){
   BW.running=false;clearInterval(BW.iv);
   setTimeout(showResults,1400);
+}
+
+/* ── WEAPON MODAL (pauses 5s) ── */
+let wpnIv=null;
+function openWeaponModal(){
+  if(!BW.running)return;
+  haptic();BW.paused=true;
+  let left=5;
+  $('wpnTimer').textContent=left;
+  $('wpnBar').style.width='100%';
+  clearInterval(wpnIv);
+  wpnIv=setInterval(()=>{
+    left--;
+    $('wpnTimer').textContent=Math.max(0,left);
+    $('wpnBar').style.width=(left/5*100)+'%';
+    if(left<=0)closeWeaponModal();
+  },1000);
+  const prim=weaponChoices();
+  let html='<div class="wpn-sec">PRIMARY — AUTOMATIC / SNIPER</div>';
+  prim.forEach((w,i)=>{html+=wpnChip(w,BW.weapon.name===w.name);});
+  html+='<div class="wpn-sec">SECONDARY</div>'+wpnChip({name:'P92 Pistol',icon:'🔪',mod:0.6,type:'Pistol'},BW.weapon.name==='P92 Pistol');
+  html+='<div class="wpn-sec">MELEE</div>'+wpnChip({name:'Combat Knife',icon:'🗡️',mod:0.35,type:'Knife'},BW.weapon.name==='Combat Knife');
+  $('wpnList').innerHTML=html;
+  $('weaponModal').classList.add('show');
+}
+function wpnChip(w,on){
+  return '<div class="wpn-row'+(on?' on':'')+'" onclick=\'chooseWeapon('+JSON.stringify(w).replace(/'/g,"&#39;")+')\'>'+
+    '<span class="wpn-icon">'+w.icon+'</span><div style="flex:1;text-align:left;"><div class="wpn-name">'+w.name+'</div><div class="wpn-type">'+w.type+' · DMG x'+w.mod.toFixed(2)+'</div></div>'+(on?'<span style="color:var(--green);font-weight:700;">✓</span>':'')+'</div>';
+}
+function chooseWeapon(w){
+  BW.weapon=w;haptic('medium');
+  addEv('loot','🔫','Switched to <span class="hl-c">'+w.name+'</span>','Active weapon changed');
+  closeWeaponModal();
+}
+function closeWeaponModal(){
+  clearInterval(wpnIv);
+  closeModal('weaponModal');
+  BW.paused=false;
+}
+
+/* ── HEALTH MODAL ── */
+function updHealthCount(){
+  const total=Object.values(BW.meds).reduce((a,b)=>a+b,0);
+  const el=$('bbHealthCount');if(el){el.textContent=total;el.style.display=total>0?'flex':'none';}
+}
+function openHealthModal(){
+  if(!BW.running)return;
+  haptic();renderHealthModal();
+  $('healthModal').classList.add('show');
+}
+function renderHealthModal(){
+  let html='';
+  for(const k in MEDS){
+    const m=MEDS[k];const count=BW.meds[k]||0;
+    const usable=count>0&&BW.hp<m.cap;
+    html+='<div class="med-row'+(usable?'':' dis')+'" onclick="useMed(\''+k+'\')">'+
+      '<span class="wpn-icon">'+m.icon+'</span><div style="flex:1;text-align:left;"><div class="wpn-name">'+m.name+'</div><div class="wpn-type">'+m.desc+'</div></div>'+
+      '<span class="med-count">x'+count+'</span></div>';
+  }
+  $('medList').innerHTML=html;
+  $('medHp').textContent=BW.hp+'%';
+}
+function useMed(k){
+  const m=MEDS[k];
+  if((BW.meds[k]||0)<=0)return;
+  if(BW.hp>=m.cap){toast(k==='bandage'||k==='firstaid'?'Already at 75+ HP — use a booster':'HP already full','');return;}
+  BW.meds[k]--;
+  if(k==='firstaid')BW.hp=75;
+  else if(k==='medkit')BW.hp=100;
+  else if(k==='bandage')BW.hp=Math.min(75,BW.hp+10);
+  else if(k==='energy')BW.hp=Math.min(100,BW.hp+23);
+  else if(k==='painkiller')BW.hp=Math.min(100,BW.hp+35);
+  else if(k==='adren')BW.hp=Math.min(100,BW.hp+60);
+  updHp();updHealthCount();hapticOk();
+  addEv('heal',m.icon,'<span class="hl-g">'+m.name+'</span> used','HP: '+BW.hp+'%');
+  renderHealthModal();
+}
+
+/* ── EQUIPMENT MODAL ── */
+function openEquipModal(){
+  if(!BW.running)return;
+  haptic();renderEquipModal();
+  $('equipModal').classList.add('show');
+}
+function renderEquipModal(){
+  const ov=BW.gear.vest===4?4:ownedVestLv(), oh=BW.gear.helm===4?4:ownedHelmLv();
+  const lvlChips=(cur,owned,set)=>[1,2,3,4].map(l=>{
+    const av=l<=owned;
+    return '<div class="chip'+(cur===l?' on':'')+(av?'':' lk')+'" onclick="'+(av?set+'('+l+')':'')+'">Lv.'+l+(av?'':' 🔒')+'</div>';
+  }).join('');
+  $('eqVest').innerHTML=lvlChips(BW.gear.vest,ov,'setVest');
+  $('eqHelm').innerHTML=lvlChips(BW.gear.helm,oh,'setHelm');
+  $('eqDef').textContent=Math.round(BW.def*100)+'% damage reduction';
+  const ut=(k,icon,name,desc)=>'<div class="med-row'+(BW.gear[k]>0?'':' dis')+'" onclick="useUtility(\''+k+'\')">'+
+    '<span class="wpn-icon">'+icon+'</span><div style="flex:1;text-align:left;"><div class="wpn-name">'+name+'</div><div class="wpn-type">'+desc+'</div></div><span class="med-count">x'+BW.gear[k]+'</span></div>';
+  $('eqUtils').innerHTML=ut('drone','🛸','Recon Drone','Reveal nearest enemy — faster next kill')+
+    ut('shell','💥','Artillery Shell','Call a shell strike on the zone')+
+    ut('rocket','🚀','Rocket Strike','Devastating strike — heavy damage');
+}
+function setVest(l){BW.gear.vest=l;calcDef();haptic();renderEquipModal();}
+function setHelm(l){BW.gear.helm=l;calcDef();haptic();renderEquipModal();}
+function useUtility(k){
+  if(BW.gear[k]<=0)return;
+  BW.gear[k]--;haptic('medium');
+  if(k==='drone'){
+    const next=BW.events.find(e=>e.type==='kill'&&e.t>BW.t);
+    if(next)next.t=Math.max(BW.t+2,next.t-15);
+    addEv('loot','🛸','<span class="hl-c">Recon drone deployed!</span>','Enemy position revealed — closing in');
+    showNotif('🛸 DRONE ACTIVE');
+  }
+  if(k==='shell'){
+    BW.dmg+=60;$('bStatD').textContent=BW.dmg;killDot();
+    addEv('kill','💥','<span class="hl-y">Artillery shell strike!</span>','+60 zone damage dealt');
+    showNotif('💥 SHELL STRIKE');
+  }
+  if(k==='rocket'){
+    BW.dmg+=140;$('bStatD').textContent=BW.dmg;killDot();killDot();
+    addEv('kill','🚀','<span class="hl">Rocket strike launched!</span>','+140 area damage dealt');
+    showNotif('🚀 ROCKET STRIKE');
+  }
+  renderEquipModal();
+}
+
+/* ── SPEED MODAL ── */
+function openSpeedModal(){
+  if(!BW.running)return;
+  haptic();renderSpeedModal();
+  $('speedModal').classList.add('show');
+}
+function hasX4Pass(){return S.player.x4_until&&new Date(S.player.x4_until).getTime()>Date.now();}
+function renderSpeedModal(){
+  const sp=BW.speed;
+  let html='';
+  html+='<div class="spd-row'+(sp===1?' on':'')+'" onclick="pickSpeed(1)"><span class="spd-x">x1</span><div style="flex:1;text-align:left;"><div class="wpn-name">Normal Speed</div><div class="wpn-type">Free</div></div>'+(sp===1?'<span style="color:var(--green);">✓</span>':'')+'</div>';
+  html+='<div class="spd-row'+(sp===2?' on':'')+'" onclick="pickSpeed(2)"><span class="spd-x">x2</span><div style="flex:1;text-align:left;"><div class="wpn-name">Double Speed</div><div class="wpn-type">'+(BW.x2paid?'Paid for this battle ✓':'100 🪙 per battle')+'</div></div>'+(sp===2?'<span style="color:var(--green);">✓</span>':'')+'</div>';
+  const x4sub=BW.x4ok?'Active this battle ✓':hasX4Pass()?'Speed Pass active — until '+new Date(S.player.x4_until).toLocaleDateString():(S.player.x4_tickets>0?S.player.x4_tickets+' ticket(s) available':'Requires Stars');
+  html+='<div class="spd-row'+(sp===4?' on':'')+'" onclick="pickSpeed(4)"><span class="spd-x" style="color:var(--gold);">x4</span><div style="flex:1;text-align:left;"><div class="wpn-name">Max Speed</div><div class="wpn-type">'+x4sub+'</div></div>'+(sp===4?'<span style="color:var(--green);">✓</span>':'')+'</div>';
+  if(!BW.x4ok&&!hasX4Pass()&&!(S.player.x4_tickets>0)){
+    html+='<button class="im-stars" style="margin-top:10px;" onclick="buySpeedStars(\'speed_once\')">⭐ 10 Stars — 4x for one battle</button>';
+    html+='<button class="im-stars" style="margin-top:8px;background:linear-gradient(135deg,var(--purple),#5B21B6);color:#fff;" onclick="buySpeedStars(\'speed_month\')">⭐ 100 Stars — 4x for 30 days</button>';
+  }
+  $('speedOpts').innerHTML=html;
+}
+async function pickSpeed(s){
+  haptic();
+  if(s===1){setSpd(1);renderSpeedModal();return;}
+  if(s===2){
+    if(BW.x2paid){setSpd(2);renderSpeedModal();return;}
+    if(S.player.coins<100){toast('Need 100 🪙 for 2x speed','red');return;}
+    try{const r=await api('speed',{mode:'x2'});S.player=r.player;BW.x2paid=true;setSpd(2);renderSpeedModal();toast('⚡ 2x speed activated! (-100🪙)','green');}
+    catch(e){toast(e.message,'red');}
+    return;
+  }
+  if(s===4){
+    if(BW.x4ok){setSpd(4);renderSpeedModal();return;}
+    try{const r=await api('speed',{mode:'x4'});if(r.player)S.player=r.player;BW.x4ok=true;setSpd(4);renderSpeedModal();hapticOk();toast('⚡ 4x MAX SPEED!','green');}
+    catch(e){renderSpeedModal();toast(e.message,'red');}
+  }
+}
+async function buySpeedStars(key){
+  haptic('medium');
+  if(!tg||!tg.openInvoice){toast('Stars payments need the Telegram app','red');return;}
+  try{
+    const r=await api('invoice',{itemKey:key});
+    tg.openInvoice(r.link,function(status){
+      if(status==='paid'){toast('⭐ Payment received!','green');waitForSpeedGrant();}
+      else if(status==='failed'){toast('Payment failed — try again','red');}
+    });
+  }catch(e){toast(e.message,'red');}
+}
+async function waitForSpeedGrant(){
+  for(let i=0;i<6;i++){
+    await new Promise(r=>setTimeout(r,1300));
+    try{
+      const st=await api('auth',{});
+      S.player=st.player;
+      if(S.player.x4_tickets>0||hasX4Pass()){hapticOk();renderSpeedModal();pickSpeed(4);return;}
+    }catch(e){}
+  }
+  toast('Purchase is processing — check the SPEED menu shortly','');
+}
+
+/* ── AIRDROP ── */
+function spawnAirdrop(){
+  BW.airdropDone=true;
+  const z=zoneCfg();
+  const ang=Math.random()*Math.PI*2,rad=z.r*0.5;
+  BW.crate={x:z.cx+Math.cos(ang)*rad,y:z.cy+Math.sin(ang)*rad,show:true};
+  addEv('zone','📦','<span class="hl-y">AIRDROP incoming!</span>','Supply crate spotted on the map — tap AIRDROP to collect');
+  showNotif('📦 AIRDROP INCOMING');
+  $('bbAirdrop').style.display='flex';
+  haptic('heavy');
+}
+async function collectAirdrop(){
+  if(!BTL.airdrop||!BW.crate)return;
+  haptic('medium');BW.paused=true;
+  $('bbAirdrop').style.display='none';
+  $('adIcon').textContent='📦';$('adName').textContent='Opening crate...';$('adDesc').textContent='';$('adBonus').textContent='';
+  $('airdropModal').classList.add('show');
+  try{
+    const r=await api('airdrop',{battleId:BTL.battle.id});
+    S.player=r.player;
+    BTL.airdropBonus=r.bonus;
+    const info=AIRDROP_INFO[r.content]||AIRDROP_INFO.fullkit;
+    setTimeout(()=>{
+      $('adIcon').textContent=info.icon;
+      $('adName').textContent=info.name;
+      $('adDesc').textContent=info.desc;
+      $('adBonus').innerHTML='+'+r.bonus.c+' 🪙 &nbsp; +'+r.bonus.xp+' XP';
+      if(r.content==='fullkit'){BW.hp=100;updHp();BW.meds.medkit=(BW.meds.medkit||0)+1;updHealthCount();}
+      if(r.content==='vest4'){BW.gear.vest=4;calcDef();}
+      if(r.content==='helm4'){BW.gear.helm=4;calcDef();}
+      if(r.content==='supergun'){BW.super=true;}
+      hapticOk();confetti(40);
+      addEv('victory',info.icon,'Airdrop collected: <span class="hl-y">'+info.name+'</span>','+'+r.bonus.c+' coins bonus');
+    },900);
+  }catch(e){
+    $('adName').textContent='Crate lost';
+    $('adDesc').textContent=e.message;
+  }
+  BW.crate=null;
+}
+function closeAirdropModal(){
+  closeModal('airdropModal');
+  BW.paused=false;
 }
 
 /* ── CANVAS ── */
@@ -1397,6 +1756,15 @@ function render(){
     if(!e.alive){ctx.fillStyle='rgba(100,116,139,0.15)';ctx.beginPath();ctx.arc(e.x,e.y,2,0,Math.PI*2);ctx.fill();return;}
     ctx.fillStyle='rgba(239,68,68,0.7)';ctx.beginPath();ctx.arc(e.x,e.y,3,0,Math.PI*2);ctx.fill();
   });
+  if(BW.crate&&BW.crate.show){
+    const c=BW.crate;
+    const bob=Math.sin(Date.now()/300)*3;
+    ctx.fillStyle='rgba(245,158,11,0.18)';ctx.beginPath();ctx.arc(c.x,c.y,16,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(245,158,11,0.7)';ctx.lineWidth=1.5;
+    ctx.strokeRect(c.x-7,c.y-7+bob,14,14);
+    ctx.fillStyle='rgba(245,158,11,0.9)';ctx.fillRect(c.x-7,c.y-7+bob,14,5);
+    ctx.font='bold 8px Rajdhani';ctx.fillStyle='rgba(245,158,11,0.95)';ctx.fillText('AIRDROP',c.x-18,c.y-12+bob);
+  }
   const f=BW.fighter;
   ctx.fillStyle='rgba(34,197,94,0.12)';ctx.beginPath();ctx.arc(f.x,f.y,14,0,Math.PI*2);ctx.fill();
   const pulse=0.5+Math.sin(Date.now()/500)*0.5;
@@ -1432,6 +1800,7 @@ function showResults(){
   if(b.kills)rows.push(['🪙','Kill Rewards ('+b.kills+')','coins','+'+(win?b.coins_gain-Math.round(b.coins_gain*0.55):Math.round(b.coins_gain*0.7))]);
   rows.push(['🪙','Total Coins','coins','+'+b.coins_gain]);
   if(b.gems_gain)rows.push(['💎','Gem Bonus','gems','+'+b.gems_gain]);
+  if(BTL.airdropBonus)rows.push(['📦','Airdrop Bonus','coins','+'+BTL.airdropBonus.c]);
   rows.push(['⭐','Battle XP','xp','+'+b.xp_gain]);
   $('resRewards').innerHTML=rows.map(x=>'<div class="rew-row"><div class="rew-left"><span style="font-size:16px;">'+x[0]+'</span><span class="rew-name">'+x[1]+'</span></div><span class="rew-val '+x[2]+'">'+x[3]+'</span></div>').join('');
   S.player=r.player;
