@@ -782,7 +782,7 @@
       <button class="bb-btn" onclick="openHealthModal()"><span class="bb-icon">💊</span><span class="bb-label">Health</span><span class="bb-count" id="bbHealthCount">12</span></button>
       <button class="bb-btn" onclick="openEquipModal()"><span class="bb-icon">🦺</span><span class="bb-label">Equip</span></button>
       <button class="bb-btn" onclick="openSpeedModal()"><span class="bb-icon">⚡</span><span class="bb-label" id="bbSpeedLabel">x1</span></button>
-      <button class="bb-btn airdrop" id="bbAirdrop" onclick="collectAirdrop()" style="display:none;"><span class="bb-icon">📦</span><span class="bb-label">AIRDROP</span></button>
+      <button class="bb-btn airdrop" id="bbAirdrop" onclick="collectAirdrop()" style="display:none;"><span class="bb-icon">📦</span><span class="bb-label">AIRDROP</span><span class="bb-count" id="bbAirdropTimer" style="background:var(--gold);">5</span></button>
     </div>
   </div>
 
@@ -1053,7 +1053,7 @@
     <div class="modal" style="text-align:center;">
       <div class="item-icon" id="adIcon" style="width:80px;height:80px;font-size:42px;margin:6px auto 12px;border-color:var(--gold);box-shadow:0 0 20px var(--gold-glow);">📦</div>
       <div class="modal-title" style="margin-bottom:6px;" id="adName">Opening crate...</div>
-      <div id="adDesc" style="font-size:13px;color:var(--text-sec);line-height:1.45;margin-bottom:10px;"></div>
+      <div id="adDesc" style="font-size:13px;color:var(--text-sec);line-height:1.45;margin-bottom:8px;"></div>\n      <div id="adWhere" style="font-size:13px;color:var(--green);font-weight:700;margin-bottom:10px;"></div>
       <div id="adBonus" style="font-family:'Orbitron',sans-serif;font-size:16px;font-weight:700;color:var(--gold);margin-bottom:14px;"></div>
       <button class="im-buy" onclick="closeAirdropModal()">CONTINUE BATTLE</button>
     </div>
@@ -1395,12 +1395,13 @@ function weaponChoices(){
   if(!autos.length)prim.push({name:'Standard AR',icon:'🔫',mod:1,type:'Automatic'});
   autos.forEach(k=>prim.push({name:ITEMS[k].name,icon:'🔫',mod:1+ITEMS[k].pwr/50,type:'Automatic'}));
   snipers.forEach(k=>prim.push({name:ITEMS[k].name,icon:'🎯',mod:1.3+ITEMS[k].pwr/50,type:'Sniper'}));
+  if(BW.superWeapon)prim.push(BW.superWeapon);
   return prim;
 }
 function startWatch(res,cfg,f){
   showScreen('battle');
   BW.t=0;BW.speed=1;BW.kills=0;BW.dmg=0;BW.hp=100;BW.zone=1;BW.alive=100;BW.trail=[];BW.paused=false;
-  BW.super=false;BW.crate=null;BW.x2paid=false;BW.x4ok=false;BW.airdropDone=false;
+  BW.super=false;BW.superWeapon=null;BW.crate=null;BW.x2paid=false;BW.x4ok=false;BW.airdropDone=false;clearInterval(adIv);
   BW.meds={bandage:5,firstaid:2,medkit:1,energy:2,painkiller:1,adren:1};
   BW.gear={vest:ownedVestLv(),helm:ownedHelmLv(),drone:1,shell:1,rocket:1};
   calcDef();
@@ -1654,21 +1655,44 @@ async function waitForSpeedGrant(){
 }
 
 /* ── AIRDROP ── */
+let adIv=null;
 function spawnAirdrop(){
   BW.airdropDone=true;
   const z=zoneCfg();
-  const ang=Math.random()*Math.PI*2,rad=z.r*0.5;
-  BW.crate={x:z.cx+Math.cos(ang)*rad,y:z.cy+Math.sin(ang)*rad,show:true};
-  addEv('zone','📦','<span class="hl-y">AIRDROP incoming!</span>','Supply crate spotted on the map — tap AIRDROP to collect');
-  showNotif('📦 AIRDROP INCOMING');
-  $('bbAirdrop').style.display='flex';
+  const ang=Math.random()*Math.PI*2,rad=z.r*0.45;
+  BW.crate={x:z.cx+Math.cos(ang)*rad,y:z.cy+Math.sin(ang)*rad,show:true,left:5};
+  addEv('zone','📦','<span class="hl-y">AIRDROP landed!</span>','Tap the crate (or AIRDROP button) within 5 seconds!');
+  showNotif('📦 AIRDROP — 5s TO COLLECT');
+  const btn=$('bbAirdrop');btn.style.display='flex';
+  $('bbAirdropTimer').textContent='5';
   haptic('heavy');
+  clearInterval(adIv);
+  adIv=setInterval(()=>{
+    if(!BW.crate)return;
+    if(BW.paused)return; // countdown freezes while game is paused
+    BW.crate.left--;
+    $('bbAirdropTimer').textContent=Math.max(0,BW.crate.left);
+    if(BW.crate.left<=1)haptic();
+    if(BW.crate.left<=0)missAirdrop();
+  },1000);
+}
+function missAirdrop(){
+  clearInterval(adIv);
+  if(!BW.crate)return;
+  BW.crate=null;
+  $('bbAirdrop').style.display='none';
+  addEv('dmg','📦','<span style="color:var(--red);font-weight:700;">Airdrop lost</span>','Another fighter grabbed the crate');
+  showNotif('📦 AIRDROP LOST');
+  render();
 }
 async function collectAirdrop(){
   if(!BTL.airdrop||!BW.crate)return;
+  clearInterval(adIv);
   haptic('medium');BW.paused=true;
   $('bbAirdrop').style.display='none';
-  $('adIcon').textContent='📦';$('adName').textContent='Opening crate...';$('adDesc').textContent='';$('adBonus').textContent='';
+  BW.crate=null;render();
+  $('adIcon').textContent='📦';$('adName').textContent='Opening crate...';
+  $('adDesc').textContent='';$('adWhere').textContent='';$('adBonus').textContent='';
   $('airdropModal').classList.add('show');
   try{
     const r=await api('airdrop',{battleId:BTL.battle.id});
@@ -1679,19 +1703,27 @@ async function collectAirdrop(){
       $('adIcon').textContent=info.icon;
       $('adName').textContent=info.name;
       $('adDesc').textContent=info.desc;
-      $('adBonus').innerHTML='+'+r.bonus.c+' 🪙 &nbsp; +'+r.bonus.xp+' XP';
-      if(r.content==='fullkit'){BW.hp=100;updHp();BW.meds.medkit=(BW.meds.medkit||0)+1;updHealthCount();}
-      if(r.content==='vest4'){BW.gear.vest=4;calcDef();}
-      if(r.content==='helm4'){BW.gear.helm=4;calcDef();}
-      if(r.content==='supergun'){BW.super=true;}
+      let where='';
+      if(r.content==='supergun'){
+        BW.superWeapon={name:'AWM-X Prototype',icon:'🎯',mod:2.2,type:'Airdrop Super Gun'};
+        BW.weapon=BW.superWeapon;BW.super=true;
+        where='🔫 Equipped as your active WEAPON';
+      }
+      if(r.content==='vest4'){BW.gear.vest=4;calcDef();where='🦺 Equipped — EQUIP » Vest Lv.4 ('+Math.round(BW.def*100)+'% protection)';}
+      if(r.content==='helm4'){BW.gear.helm=4;calcDef();where='🪖 Equipped — EQUIP » Helmet Lv.4 ('+Math.round(BW.def*100)+'% protection)';}
+      if(r.content==='fullkit'){
+        BW.hp=100;updHp();BW.meds.medkit=(BW.meds.medkit||0)+1;updHealthCount();
+        where='💊 HP restored to 100% · +1 Med Kit added to HEALTH bag';
+      }
+      $('adWhere').textContent=where;
+      $('adBonus').innerHTML='+'+r.bonus.c+' 🪙 added to balance &nbsp;·&nbsp; +'+r.bonus.xp+' XP';
       hapticOk();confetti(40);
-      addEv('victory',info.icon,'Airdrop collected: <span class="hl-y">'+info.name+'</span>','+'+r.bonus.c+' coins bonus');
+      addEv('victory',info.icon,'Airdrop collected: <span class="hl-y">'+info.name+'</span>','+'+r.bonus.c+' coins added to balance');
     },900);
   }catch(e){
     $('adName').textContent='Crate lost';
     $('adDesc').textContent=e.message;
   }
-  BW.crate=null;
 }
 function closeAirdropModal(){
   closeModal('airdropModal');
@@ -1703,6 +1735,16 @@ let ctx,CW,CH;
 const LOCS=[[0.1,0.08,'RADAR BASE'],[0.77,0.07,'DORMITORY'],[0.41,0.16,'NUCLEAR PLANT'],[0.79,0.27,'SAKURA'],[0.13,0.38,'BLACK MARKET'],[0.51,0.32,'OVERGROWN'],[0.31,0.54,'BUS STATION'],[0.77,0.54,'KILLHOUSE'],[0.13,0.7,'DOWNTOWN'],[0.51,0.68,'LAUNCH BASE'],[0.82,0.76,'CRASH SITE'],[0.26,0.86,'PIPELINE'],[0.77,0.92,'ECOLOGY LAB']];
 function initCanvas(){
   const cvs=$('mapCanvas');const r=cvs.parentElement.getBoundingClientRect();
+  if(!cvs._tapBound){
+    cvs._tapBound=true;
+    cvs.addEventListener('click',function(ev){
+      if(!BW.crate)return;
+      const rect=cvs.getBoundingClientRect();
+      const x=ev.clientX-rect.left,y=ev.clientY-rect.top;
+      const dx=x-BW.crate.x,dy=y-BW.crate.y;
+      if(Math.sqrt(dx*dx+dy*dy)<48)collectAirdrop();
+    });
+  }
   CW=cvs.width=r.width;CH=cvs.height=r.height;
   ctx=cvs.getContext('2d');
   BW.fighter={x:CW*0.78,y:CH*0.85};
@@ -1759,11 +1801,14 @@ function render(){
   if(BW.crate&&BW.crate.show){
     const c=BW.crate;
     const bob=Math.sin(Date.now()/300)*3;
-    ctx.fillStyle='rgba(245,158,11,0.18)';ctx.beginPath();ctx.arc(c.x,c.y,16,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='rgba(245,158,11,0.7)';ctx.lineWidth=1.5;
-    ctx.strokeRect(c.x-7,c.y-7+bob,14,14);
-    ctx.fillStyle='rgba(245,158,11,0.9)';ctx.fillRect(c.x-7,c.y-7+bob,14,5);
-    ctx.font='bold 8px Rajdhani';ctx.fillStyle='rgba(245,158,11,0.95)';ctx.fillText('AIRDROP',c.x-18,c.y-12+bob);
+    const pulse2=0.5+Math.sin(Date.now()/250)*0.5;
+    ctx.fillStyle='rgba(245,158,11,'+(0.12+pulse2*0.12)+')';ctx.beginPath();ctx.arc(c.x,c.y,26,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(245,158,11,'+(0.5+pulse2*0.4)+')';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(c.x,c.y,20+pulse2*5,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='rgba(245,158,11,0.9)';ctx.lineWidth=1.5;
+    ctx.strokeRect(c.x-9,c.y-9+bob,18,18);
+    ctx.fillStyle='rgba(245,158,11,0.9)';ctx.fillRect(c.x-9,c.y-9+bob,18,6);
+    ctx.font='bold 10px Rajdhani';ctx.fillStyle='#FBBF24';ctx.fillText('TAP! '+(c.left||''),c.x-14,c.y-16+bob);
   }
   const f=BW.fighter;
   ctx.fillStyle='rgba(34,197,94,0.12)';ctx.beginPath();ctx.arc(f.x,f.y,14,0,Math.PI*2);ctx.fill();
