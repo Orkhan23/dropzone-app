@@ -544,6 +544,28 @@
   @keyframes cFall{0%{opacity:1;transform:translateY(0) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translateY(var(--fd,850px)) rotate(var(--fr,720deg)) translateX(var(--dx,0px)) scale(0.15)}}
   .conf.star{clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
   .conf.diamond{clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);}
+
+  /* ══ SHOP v2: weapon rows + item modal ══ */
+  .item-row{display:flex;align-items:center;gap:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px;margin:0 14px 10px;cursor:pointer;position:relative;overflow:hidden;}
+  .item-row:active{transform:scale(0.98);}
+  .item-row.legendary{border-color:var(--gold);background:linear-gradient(90deg,rgba(245,158,11,0.07),var(--bg-card));}
+  .item-row.epic{border-color:var(--purple);background:linear-gradient(90deg,rgba(124,58,237,0.07),var(--bg-card));}
+  .item-row.rare{border-color:var(--cyan);background:linear-gradient(90deg,rgba(0,212,255,0.05),var(--bg-card));}
+  .ir-icon{width:56px;height:56px;border-radius:10px;background:var(--bg-deep);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;}
+  .item-row.legendary .ir-icon{border-color:rgba(245,158,11,0.3);box-shadow:0 0 10px var(--gold-dim);}
+  .item-row.epic .ir-icon{border-color:rgba(124,58,237,0.3);box-shadow:0 0 10px var(--purple-dim);}
+  .ir-info{flex:1;min-width:0;}
+  .ir-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .ir-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}
+  .ir-stars{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--gold);background:var(--gold-dim);border:1px solid rgba(245,158,11,0.25);padding:2px 7px;border-radius:4px;font-weight:700;display:inline-block;}
+  .im-row{display:flex;justify-content:space-between;align-items:center;background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:6px;font-size:13px;color:var(--text-muted);text-align:left;}
+  .im-row strong{color:var(--text);font-weight:700;}
+  .im-buy{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#D9650E);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow);}
+  .im-buy:active{transform:scale(0.97);}
+  .im-buy.dis{opacity:0.45;box-shadow:none;}
+  .im-stars{width:100%;padding:13px;background:linear-gradient(135deg,#F59E0B,#D97706);border:none;border-radius:10px;color:var(--bg-deep);font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 14px var(--gold-glow);}
+  .im-stars:active{transform:scale(0.97);}
+  .im-owned{padding:12px;background:var(--green-dim);border:1px solid var(--green);border-radius:10px;color:var(--green);font-weight:700;}
 </style>
 </head>
 <body>
@@ -951,6 +973,19 @@
     </div>
   </div>
 
+  <!-- ═══════════ ITEM MODAL ═══════════ -->
+  <div class="modal-overlay" id="itemModal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" onclick="closeModal('itemModal')">✕</button>
+      <div class="item-icon" id="imIcon" style="width:72px;height:72px;font-size:38px;margin:4px auto 10px;">🔫</div>
+      <div class="modal-title" style="margin-bottom:4px;" id="imName">—</div>
+      <div id="imTier" style="margin-bottom:10px;"></div>
+      <div id="imDesc" style="font-size:13px;color:var(--text-sec);line-height:1.45;margin-bottom:14px;padding:0 6px;"></div>
+      <div id="imStats" style="margin-bottom:14px;"></div>
+      <div id="imButtons" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+
   <div class="celeb-overlay" id="celebOverlay"></div>
   <div class="toast" id="toast"></div>
 </div>
@@ -967,20 +1002,20 @@ function hapticOk(){ try{ tg?.HapticFeedback?.notificationOccurred('success'); }
 
 /* ── Shared game data (mirrors server) ── */
 const ITEMS = {
-  m16:{name:'M16A4',icon:'🔫',tier:1,cat:'weapons',sect:'Assault Rifles',stat:'PWR +3',c:300,pwr:3},
-  ak47:{name:'AK-47',icon:'🔫',tier:2,cat:'weapons',sect:'Assault Rifles',stat:'PWR +5',c:500,pwr:5},
-  scarh:{name:'SCAR-H',icon:'🔫',tier:3,cat:'weapons',sect:'Assault Rifles',stat:'PWR +9',c:1200,pwr:9},
-  groza:{name:'Groza',icon:'🔫',tier:4,cat:'weapons',sect:'Assault Rifles',stat:'PWR +14',g:200,pwr:14},
-  mini14:{name:'Mini-14',icon:'🎯',tier:2,cat:'weapons',sect:'Snipers',stat:'PWR +6',c:650,pwr:6},
-  awm:{name:'AWM',icon:'🎯',tier:3,cat:'weapons',sect:'Snipers',stat:'PWR +12',g:150,pwr:12},
-  helm2:{name:'Tactical Helm',icon:'🪖',tier:2,cat:'equip',sect:'Helmets',stat:'PWR +3',c:400,pwr:3},
-  helm3:{name:'MICH 2000',icon:'🪖',tier:3,cat:'equip',sect:'Helmets',stat:'PWR +6',c:900,pwr:6},
-  vest2:{name:'Kevlar Vest',icon:'🦺',tier:2,cat:'equip',sect:'Vests',stat:'PWR +4',c:500,pwr:4},
-  vest3:{name:'Plate Carrier',icon:'🦺',tier:3,cat:'equip',sect:'Vests',stat:'PWR +7',c:1100,pwr:7},
-  pack2:{name:'Tactical Pack',icon:'🎒',tier:2,cat:'equip',sect:'Backpacks',stat:'PWR +3',c:450,pwr:3},
-  pack4:{name:'Spec Ops Rig',icon:'🎒',tier:4,cat:'equip',sect:'Backpacks',stat:'PWR +10',g:180,pwr:10},
-  scope:{name:'4x Scope',icon:'🔭',tier:2,cat:'equip',sect:'Attachments',stat:'PWR +2',c:350,pwr:2},
-  supp:{name:'Suppressor',icon:'🔇',tier:2,cat:'equip',sect:'Attachments',stat:'PWR +3',c:400,pwr:3},
+  m16:{name:'M16A4',icon:'🔫',tier:1,cat:'weapons',sect:'Assault Rifles',stat:'PWR +3',c:300,s:5,pwr:3},
+  ak47:{name:'AK-47',icon:'🔫',tier:2,cat:'weapons',sect:'Assault Rifles',stat:'PWR +5',c:500,s:8,pwr:5},
+  scarh:{name:'SCAR-H',icon:'🔫',tier:3,cat:'weapons',sect:'Assault Rifles',stat:'PWR +9',c:1200,s:18,pwr:9},
+  groza:{name:'Groza',icon:'🔫',tier:4,cat:'weapons',sect:'Assault Rifles',stat:'PWR +14',g:200,s:30,pwr:14},
+  mini14:{name:'Mini-14',icon:'🎯',tier:2,cat:'weapons',sect:'Snipers',stat:'PWR +6',c:650,s:10,pwr:6},
+  awm:{name:'AWM',icon:'🎯',tier:3,cat:'weapons',sect:'Snipers',stat:'PWR +12',g:150,s:25,pwr:12},
+  helm2:{name:'Tactical Helm',icon:'🪖',tier:2,cat:'equip',sect:'Helmets',stat:'PWR +3',c:400,s:6,pwr:3},
+  helm3:{name:'MICH 2000',icon:'🪖',tier:3,cat:'equip',sect:'Helmets',stat:'PWR +6',c:900,s:13,pwr:6},
+  vest2:{name:'Kevlar Vest',icon:'🦺',tier:2,cat:'equip',sect:'Vests',stat:'PWR +4',c:500,s:7,pwr:4},
+  vest3:{name:'Plate Carrier',icon:'🦺',tier:3,cat:'equip',sect:'Vests',stat:'PWR +7',c:1100,s:16,pwr:7},
+  pack2:{name:'Tactical Pack',icon:'🎒',tier:2,cat:'equip',sect:'Backpacks',stat:'PWR +3',c:450,s:7,pwr:3},
+  pack4:{name:'Spec Ops Rig',icon:'🎒',tier:4,cat:'equip',sect:'Backpacks',stat:'PWR +10',g:180,s:27,pwr:10},
+  scope:{name:'4x Scope',icon:'🔭',tier:2,cat:'equip',sect:'Attachments',stat:'PWR +2',c:350,s:5,pwr:2},
+  supp:{name:'Suppressor',icon:'🔇',tier:2,cat:'equip',sect:'Attachments',stat:'PWR +3',c:400,s:6,pwr:3},
 };
 const DAILY_REWARDS = [{c:50},{c:75},{c:100},{c:150,g:5},{c:200},{g:10},{c:500,g:15}];
 const CLASS_LABEL = {assault:'Assault',scout:'Scout',medic:'Medic',marksman:'Marksman'};
@@ -1420,39 +1455,123 @@ function shareResult(){
 }
 
 /* ── SHOP ── */
+const ITEM_DESC={
+  m16:'Reliable starter rifle. Low recoil, solid mid-range performance.',
+  ak47:'Classic assault rifle with heavy rounds. Great damage per shot.',
+  scarh:'Battle-proven rifle with high accuracy and stopping power.',
+  groza:'Bullpup beast for close-quarters devastation. Rare drop.',
+  mini14:'Lightweight marksman rifle. Fast follow-up shots.',
+  awm:'Legendary bolt-action sniper. One shot, one elimination.',
+  helm2:'Composite helmet that shrugs off grazing shots.',
+  helm3:'Military-grade head protection used by spec-ops.',
+  vest2:'Kevlar plating that absorbs body damage.',
+  vest3:'Heavy plate carrier for sustained firefights.',
+  pack2:'More loot capacity keeps your fighter equipped longer.',
+  pack4:'Spec-ops rig with maximum capacity and utility.',
+  scope:'Magnified optics extend your effective range.',
+  supp:'Stay off the radar — muzzle flash and sound suppressed.'
+};
 let SHOP_TAB='weapons';
 function shopTab(t,el){SHOP_TAB=t;document.querySelectorAll('#scr-shop .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderShop();haptic();}
+function rarityCls(t){return t>=4?'legendary':t===3?'epic':t===2?'rare':'';}
+function priceTag(v){return v.g?'💎 '+fmtN(v.g):'🪙 '+fmtN(v.c);}
 function renderShop(){
   $('shopCoins').textContent=fmtN(S.player.coins);$('shopGems').textContent=fmtN(S.player.gems);
   const sections={};
   Object.entries(ITEMS).filter(([k,v])=>v.cat===SHOP_TAB).forEach(([k,v])=>{(sections[v.sect]=sections[v.sect]||[]).push([k,v]);});
   let html='';
   for(const [sect,items] of Object.entries(sections)){
-    html+='<div class="section-title">'+sect+'</div><div class="item-grid">';
-    items.forEach(([k,v])=>{
-      const owned=S.purchases.includes(k);
-      const rarity=v.tier>=4?'legendary':v.tier===3?'epic':v.tier===2?'rare':'';
-      html+='<div class="item-card '+rarity+'" onclick="buyItem(\''+k+'\')">'+(owned?'<span class="owned-badge">OWNED</span>':'')+
-        '<div class="item-icon">'+v.icon+'</div><span class="tier-badge t'+v.tier+'">TIER '+v.tier+'</span>'+
-        '<div class="item-name">'+v.name+'</div><div class="item-stat">'+v.stat+'</div>'+
-        '<div class="item-price '+(v.g?'gems':'coins')+'">'+(v.g?'💎 '+fmtN(v.g):'🪙 '+fmtN(v.c))+'</div></div>';
-    });
-    html+='</div>';
+    html+='<div class="section-title">'+sect+'</div>';
+    if(SHOP_TAB==='weapons'){
+      items.forEach(([k,v])=>{html+=weaponRow(k,v);});
+    } else {
+      html+='<div class="item-grid">';
+      items.forEach(([k,v])=>{html+=equipCard(k,v);});
+      html+='</div>';
+    }
   }
   $('shopContent').innerHTML=html+'<div style="height:10px;"></div>';
 }
-async function buyItem(k){
+function weaponRow(k,v){
+  const owned=S.purchases.includes(k);
+  return '<div class="item-row '+rarityCls(v.tier)+'" onclick="openItem(\''+k+'\')">'+
+    '<div class="ir-icon">'+v.icon+'</div>'+
+    '<div class="ir-info"><div class="ir-top"><span class="item-name">'+v.name+'</span><span class="tier-badge t'+v.tier+'" style="margin:0;">TIER '+v.tier+'</span></div>'+
+    '<div class="item-stat" style="margin:3px 0 0;">'+v.stat+' · '+v.sect.replace(/s$/,'')+'</div></div>'+
+    '<div class="ir-right">'+(owned?'<span class="owned-badge" style="position:static;font-size:10px;">OWNED</span>'
+      :'<span class="item-price '+(v.g?'gems':'coins')+'">'+priceTag(v)+'</span><span class="ir-stars">⭐ '+v.s+'</span>')+'</div></div>';
+}
+function equipCard(k,v){
+  const owned=S.purchases.includes(k);
+  return '<div class="item-card '+rarityCls(v.tier)+'" onclick="openItem(\''+k+'\')">'+(owned?'<span class="owned-badge">OWNED</span>':'')+
+    '<div class="item-icon">'+v.icon+'</div><span class="tier-badge t'+v.tier+'">TIER '+v.tier+'</span>'+
+    '<div class="item-name">'+v.name+'</div><div class="item-stat">'+v.stat+'</div>'+
+    '<div class="item-price '+(v.g?'gems':'coins')+'">'+priceTag(v)+'</div>'+
+    (owned?'':'<div style="margin-top:4px;"><span class="ir-stars">⭐ '+v.s+'</span></div>')+'</div>';
+}
+let ITEM_KEY=null;
+function openItem(k){
   haptic();
+  ITEM_KEY=k;
+  const v=ITEMS[k];const owned=S.purchases.includes(k);
+  const f=activeFighter();const cur=f?fighterPower(f):0;
+  $('imIcon').textContent=v.icon;
+  $('imName').textContent=v.name;
+  $('imTier').innerHTML='<span class="tier-badge t'+v.tier+'" style="margin:0;">TIER '+v.tier+'</span> <span class="item-stat" style="margin:0 0 0 6px;">'+v.sect.replace(/s$/,'')+'</span>';
+  $('imDesc').textContent=ITEM_DESC[k]||'';
+  $('imStats').innerHTML=
+    '<div class="im-row"><span>Power Bonus</span><strong style="color:var(--accent);">+'+v.pwr+' PWR</strong></div>'+
+    (f?'<div class="im-row"><span>'+esc(f.name)+'’s Power</span><strong>'+cur+(owned?'':' → <span style="color:var(--green);">'+(cur+v.pwr)+'</span>')+'</strong></div>':'')+
+    '<div class="im-row"><span>Applies</span><strong>Instantly, all fighters</strong></div>';
+  const btns=$('imButtons');
+  if(owned){
+    btns.innerHTML='<div class="im-owned">✓ Already in your arsenal</div>';
+  } else {
+    const afford=v.g?S.player.gems>=v.g:S.player.coins>=v.c;
+    btns.innerHTML=
+      '<button class="im-buy'+(afford?'':' dis')+'" onclick="buyItem(\''+k+'\')">'+priceTag(v)+' — Buy'+(afford?'':' (not enough)')+'</button>'+
+      '<button class="im-stars" onclick="buyStars(\''+k+'\')">⭐ Buy with '+v.s+' Stars</button>';
+  }
+  $('itemModal').classList.add('show');
+}
+async function buyItem(k){
+  haptic('medium');
   const v=ITEMS[k];
-  if(S.purchases.includes(k)){toast('Already owned','');return;}
+  if(S.purchases.includes(k))return;
   if(v.c&&S.player.coins<v.c){toast('Not enough coins','red');return;}
   if(v.g&&S.player.gems<v.g){toast('Not enough gems','red');return;}
   try{
     const r=await api('buy',{itemKey:k});
     S.player=r.player;S.purchases=r.purchases;
-    hapticOk();renderShop();
+    hapticOk();confetti(35);renderShop();openItem(k);
     toast('✓ '+v.name+' purchased! '+v.stat,'green');
   }catch(e){toast(e.message,'red');}
+}
+async function buyStars(k){
+  haptic('medium');
+  if(!tg||!tg.openInvoice){toast('Stars payments need the Telegram app','red');return;}
+  try{
+    const r=await api('invoice',{itemKey:k});
+    tg.openInvoice(r.link,function(status){
+      if(status==='paid'){toast('⭐ Payment received!','green');waitForGrant(k);}
+      else if(status==='failed'){toast('Payment failed — try again','red');}
+    });
+  }catch(e){toast(e.message,'red');}
+}
+async function waitForGrant(k){
+  for(let i=0;i<6;i++){
+    await new Promise(r=>setTimeout(r,1300));
+    try{
+      const st=await api('auth',{});
+      Object.assign(S,st);
+      if(S.purchases.includes(k)){
+        hapticOk();confetti(50);renderShop();openItem(k);updateTaskDot();
+        toast('✓ '+ITEMS[k].name+' added to your arsenal!','green');
+        return;
+      }
+    }catch(e){}
+  }
+  toast('Purchase is processing — it will appear shortly','');
 }
 
 /* ── TASKS ── */
