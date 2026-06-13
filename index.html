@@ -548,6 +548,12 @@
   .ref-skel{height:54px;margin:0 16px 6px;border-radius:10px;background:linear-gradient(90deg,var(--bg-card),var(--bg-deep),var(--bg-card));background-size:200% 100%;animation:refShimmer 1.2s infinite;}
   @keyframes refShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+  /* ══ BOOSTED DROP PILL ══ */
+  .boost-pill{margin:0 0 10px;padding:9px 14px;border-radius:11px;background:linear-gradient(135deg,rgba(34,211,238,0.14),rgba(245,179,1,0.10));border:1px solid var(--cyan);font-size:12px;color:var(--text-sec);text-align:center;line-height:1.35;}
+  .boost-pill strong{color:var(--cyan);}
+  .boost-pill .bp-bolt{display:inline-block;animation:bpFlash 1.4s ease-in-out infinite;}
+  @keyframes bpFlash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.18)}}
+
   /* ══ STARTER PACK ══ */
   .starter-banner{position:relative;margin:0 0 12px;padding:14px;border-radius:14px;background:linear-gradient(135deg,#2a1c05,#3d2a08);border:1.5px solid var(--gold);overflow:hidden;cursor:pointer;box-shadow:0 0 18px rgba(245,179,1,0.22);}
   .starter-banner:active{transform:scale(0.985);}
@@ -734,6 +740,7 @@
         </div>
         <button class="fc-switch" onclick="showScreen('fighters')">Switch ›</button>
       </div>
+      <div class="boost-pill" id="boostPill" style="display:none;"><span class="bp-bolt">⚡</span> <strong>Boosted Drop ready</strong> — next battle pays <strong>2x coins</strong></div>
       <div class="deploy-area">
         <button class="deploy-btn" onclick="openDeploy()">⚔️ DEPLOY TO BATTLE<div class="shimmer"></div></button>
       </div>
@@ -1244,6 +1251,7 @@ function renderHome(){
   $('homeScore').textContent=fmtN(p.score);
   $('dailyBanner').style.display=S.dailyAvailable?'flex':'none';
   renderStarter();
+  $('boostPill').style.display=S.boostAvailable?'block':'none';
   const f=activeFighter();if(!f)return;
   $('homeSoldier').textContent=f.avatar;
   $('hfAvatar').textContent=f.avatar;$('hfName').textContent=f.name;
@@ -1958,6 +1966,7 @@ function showResults(){
   if(b.gems_gain)rows.push(['💎','Gem Bonus','gems','+'+b.gems_gain]);
   if(BTL.airdropBonus)rows.push(['📦','Airdrop Bonus','coins','+'+BTL.airdropBonus.c]);
   rows.push(['⭐','Battle XP','xp','+'+b.xp_gain]);
+  if(r.boosted){rows.unshift(['⚡','Boosted Drop — 2x Coins!','coins','✓']);S.boostAvailable=false;}
   $('resRewards').innerHTML=rows.map(x=>'<div class="rew-row"><div class="rew-left"><span style="font-size:16px;">'+x[0]+'</span><span class="rew-name">'+x[1]+'</span></div><span class="rew-val '+x[2]+'">'+x[3]+'</span></div>').join('');
   S.player=r.player;
   S.fighters=S.fighters.map(x=>x.id===f.id?f:x);
