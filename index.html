@@ -536,6 +536,17 @@
   .fr-name{font-size:13px;font-weight:700;color:var(--text);}
   .fr-meta{font-size:11px;color:var(--text-muted);}
   .fr-reward{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--gold);font-weight:700;margin-left:auto;}
+  .fr-info{flex:1;min-width:0;}
+  .fr-info .fr-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fr-stats{display:flex;flex-direction:column;align-items:flex-end;margin-left:auto;flex-shrink:0;}
+  .fr-lvl{font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;color:var(--cyan);}
+  .fr-kills{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  .sec-count{margin-left:auto;letter-spacing:0;color:var(--cyan);font-weight:700;}
+  .ref-empty{text-align:center;padding:22px 16px;margin:0 16px;background:var(--bg-card);border:1px dashed var(--border);border-radius:12px;}
+  .ref-empty .re-icon{font-size:30px;margin-bottom:6px;opacity:.7;}
+  .ref-empty .re-text{font-size:13px;color:var(--text-muted);line-height:1.4;}
+  .ref-skel{height:54px;margin:0 16px 6px;border-radius:10px;background:linear-gradient(90deg,var(--bg-card),var(--bg-deep),var(--bg-card));background-size:200% 100%;animation:refShimmer 1.2s infinite;}
+  @keyframes refShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
   /* ══ CONFETTI ══ */
   .celeb-overlay{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:550;}
@@ -908,6 +919,8 @@
       </div>
       <div class="sec-label">Invite Milestones</div>
       <div id="refTiers"></div>
+      <div class="sec-label">Your Squad <span id="refListCount" class="sec-count"></span></div>
+      <div id="refList"></div>
       <div style="height:20px;"></div>
     </div>
   </div>
@@ -2093,6 +2106,29 @@ function renderFriends(){
     if(!reached&&next){cls+=' next';next=false;}
     return '<div class="'+cls+'"><div class="tier-icon">'+icon+'</div><div class="tier-info"><div class="tier-name">'+name+'</div><div class="tier-req">Invite '+n+' friend'+(n>1?'s':'')+' ('+Math.min(p.ref_count,n)+'/'+n+')</div></div>'+(reached?'<span class="tier-check">✓</span>':'<span class="tier-reward">'+rew+'</span>')+'</div>';
   }).join('');
+  loadReferrals();
+}
+async function loadReferrals(){
+  $('refListCount').textContent='';
+  $('refList').innerHTML='<div class="ref-skel"></div><div class="ref-skel"></div>';
+  try{
+    const r=await api('referrals',{});
+    const players=r.players||[];
+    if(!players.length){
+      $('refList').innerHTML='<div class="ref-empty"><div class="re-icon">🪂</div><div class="re-text">No recruits yet. Share your link above — each friend who joins lands here and earns you <strong>500🪙 + 20💎</strong>.</div></div>';
+      return;
+    }
+    $('refListCount').textContent=players.length;
+    $('refList').innerHTML=players.map(x=>
+      '<div class="friend-row"><div class="fr-avatar">'+(x.avatar||'🎖️')+'</div>'+
+      '<div class="fr-info"><div class="fr-name">'+esc(x.name)+'</div>'+
+      '<div class="fr-meta">Joined '+timeAgo(x.joined_at)+'</div></div>'+
+      '<div class="fr-stats"><span class="fr-lvl">Lv.'+x.level+'</span>'+
+      '<span class="fr-kills">💀 '+fmtN(x.kills)+'</span></div></div>'
+    ).join('');
+  }catch(e){
+    $('refList').innerHTML='<div class="ref-empty"><div class="re-text">Couldn\'t load your squad — pull down to retry.</div></div>';
+  }
 }
 function refUrl(){return 'https://t.me/'+BOT_USERNAME+'?startapp=ref_'+S.player.tg_id;}
 function copyRefLink(btn){
