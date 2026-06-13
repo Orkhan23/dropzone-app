@@ -548,6 +548,23 @@
   .ref-skel{height:54px;margin:0 16px 6px;border-radius:10px;background:linear-gradient(90deg,var(--bg-card),var(--bg-deep),var(--bg-card));background-size:200% 100%;animation:refShimmer 1.2s infinite;}
   @keyframes refShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+  /* ══ COIN BUNDLES ══ */
+  .bundle-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;}
+  .bundle-card{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 12px 12px;text-align:center;cursor:pointer;transition:transform .1s ease,border-color .2s;overflow:hidden;}
+  .bundle-card:active{transform:scale(0.97);}
+  .bundle-card.pop{border-color:var(--cyan);}
+  .bundle-card.best{border-color:var(--gold);background:linear-gradient(160deg,var(--bg-card),rgba(245,179,1,0.10));}
+  .bundle-tag{position:absolute;top:0;right:0;background:var(--gold);color:var(--bg-deep);font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 8px;border-bottom-left-radius:9px;font-family:'Share Tech Mono',monospace;}
+  .bundle-card.pop .bundle-tag{background:var(--cyan);}
+  .bundle-icon{font-size:38px;line-height:1;margin-bottom:6px;}
+  .bundle-name{font-size:11px;font-weight:700;color:var(--text-sec);letter-spacing:.3px;margin-bottom:4px;}
+  .bundle-coins{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:800;color:var(--gold);}
+  .bundle-bonus{font-size:10px;font-weight:700;color:var(--green);margin-top:3px;letter-spacing:.5px;font-family:'Share Tech Mono',monospace;}
+  .bundle-bonus.base{color:var(--text-muted);}
+  .bundle-buy{width:100%;margin-top:10px;padding:9px 6px;background:linear-gradient(135deg,#F5B301,#E08A00);border:none;border-radius:9px;color:#1a1205;font-size:14px;font-weight:800;cursor:pointer;font-family:'Orbitron',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;}
+  .bundle-usd{font-size:10px;font-weight:600;opacity:.7;font-family:'Share Tech Mono',monospace;}
+  .bundle-note{font-size:11px;color:var(--text-muted);text-align:center;padding:16px 24px 4px;line-height:1.4;}
+
   /* ══ CONFETTI ══ */
   .celeb-overlay{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:550;}
   .conf{position:absolute;top:-10px;opacity:0;}
@@ -852,6 +869,7 @@
     <div class="tabs">
       <button class="tab active" onclick="shopTab('weapons',this)">Weapons</button>
       <button class="tab" onclick="shopTab('equip',this)">Equipment</button>
+      <button class="tab" onclick="shopTab('coins',this)">Coins</button>
     </div>
     <div class="content" id="shopContent"></div>
   </div>
@@ -1898,12 +1916,31 @@ const ITEM_DESC={
   scope:'Magnified optics extend your effective range.',
   supp:'Stay off the radar — muzzle flash and sound suppressed.'
 };
+const COIN_BUNDLES={
+  coins_1:{icon:'🪙',name:'Coin Pouch',coins:1000,s:50,bonus:0,usd:1},
+  coins_3:{icon:'💰',name:'Coin Sack',coins:3300,s:150,bonus:10,usd:3},
+  coins_6:{icon:'👝',name:'Coin Bag',coins:7000,s:300,bonus:17,usd:6},
+  coins_9:{icon:'📦',name:'Ammo Crate',coins:11000,s:450,bonus:22,usd:9},
+  coins_15:{icon:'🎁',name:'Supply Drop',coins:19500,s:750,bonus:30,usd:15,tag:'POPULAR',tagcls:'pop'},
+  coins_25:{icon:'🧰',name:'War Chest',coins:34000,s:1250,bonus:36,usd:25},
+  coins_45:{icon:'🏅',name:'Bullion Case',coins:63000,s:2250,bonus:40,usd:45},
+  coins_60:{icon:'🔐',name:"Commander's Vault",coins:87000,s:3000,bonus:45,usd:60},
+  coins_85:{icon:'💎',name:'Treasure Hoard',coins:130000,s:4250,bonus:53,usd:85},
+  coins_99:{icon:'👑',name:'Mega Vault',coins:160000,s:5000,bonus:60,usd:99,tag:'BEST VALUE',tagcls:'best'},
+};
 let SHOP_TAB='weapons';
 function shopTab(t,el){SHOP_TAB=t;document.querySelectorAll('#scr-shop .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderShop();haptic();}
 function rarityCls(t){return t>=4?'legendary':t===3?'epic':t===2?'rare':'';}
 function priceTag(v){return v.g?'💎 '+fmtN(v.g):'🪙 '+fmtN(v.c);}
 function renderShop(){
   $('shopCoins').textContent=fmtN(S.player.coins);$('shopGems').textContent=fmtN(S.player.gems);
+  if(SHOP_TAB==='coins'){
+    let h='<div class="section-title">Coin Bundles</div><div class="bundle-grid">';
+    Object.entries(COIN_BUNDLES).forEach(([k,b])=>{h+=coinBundleCard(k,b);});
+    h+='</div><div class="bundle-note">Coins credit instantly after payment. Paid securely with Telegram Stars ⭐.</div>';
+    $('shopContent').innerHTML=h+'<div style="height:10px;"></div>';
+    return;
+  }
   const sections={};
   Object.entries(ITEMS).filter(([k,v])=>v.cat===SHOP_TAB).forEach(([k,v])=>{(sections[v.sect]=sections[v.sect]||[]).push([k,v]);});
   let html='';
@@ -1935,6 +1972,44 @@ function equipCard(k,v){
     '<div class="item-name">'+v.name+'</div><div class="item-stat">'+v.stat+'</div>'+
     '<div class="item-price '+(v.g?'gems':'coins')+'">'+priceTag(v)+'</div>'+
     (owned?'':'<div style="margin-top:4px;"><span class="ir-stars">⭐ '+v.s+'</span></div>')+'</div>';
+}
+function coinBundleCard(k,b){
+  return '<div class="bundle-card'+(b.tagcls?' '+b.tagcls:'')+'" onclick="buyCoins(\''+k+'\')">'+
+    (b.tag?'<span class="bundle-tag">'+b.tag+'</span>':'')+
+    '<div class="bundle-icon">'+b.icon+'</div>'+
+    '<div class="bundle-name">'+b.name+'</div>'+
+    '<div class="bundle-coins">🪙 '+fmtN(b.coins)+'</div>'+
+    (b.bonus?'<div class="bundle-bonus">+'+b.bonus+'% BONUS</div>':'<div class="bundle-bonus base">STARTER PACK</div>')+
+    '<button class="bundle-buy">⭐ '+fmtN(b.s)+' <span class="bundle-usd">≈ $'+b.usd+'</span></button>'+
+    '</div>';
+}
+async function buyCoins(k){
+  haptic('medium');
+  if(!tg||!tg.openInvoice){toast('Stars payments need the Telegram app','red');return;}
+  const before=S.player.coins;
+  try{
+    const r=await api('invoice',{itemKey:k});
+    tg.openInvoice(r.link,function(status){
+      if(status==='paid'){toast('⭐ Payment received!','green');waitForCoinGrant(before,k);}
+      else if(status==='failed'){toast('Payment failed — try again','red');}
+    });
+  }catch(e){toast(e.message,'red');}
+}
+async function waitForCoinGrant(before,k){
+  for(let i=0;i<7;i++){
+    await new Promise(r=>setTimeout(r,1300));
+    try{
+      const st=await api('auth',{});
+      Object.assign(S,st);
+      if(S.player.coins>before){
+        hapticOk();confetti(50);renderShop();
+        toast('✓ '+fmtN(COIN_BUNDLES[k].coins)+' coins added!','green');
+        return;
+      }
+    }catch(e){}
+  }
+  renderShop();
+  toast('Purchase is processing — your coins will appear shortly','');
 }
 let ITEM_KEY=null;
 function openItem(k){
