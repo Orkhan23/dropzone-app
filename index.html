@@ -548,6 +548,21 @@
   .ref-skel{height:54px;margin:0 16px 6px;border-radius:10px;background:linear-gradient(90deg,var(--bg-card),var(--bg-deep),var(--bg-card));background-size:200% 100%;animation:refShimmer 1.2s infinite;}
   @keyframes refShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+  /* ══ STARTER PACK ══ */
+  .starter-banner{position:relative;margin:0 0 12px;padding:14px;border-radius:14px;background:linear-gradient(135deg,#2a1c05,#3d2a08);border:1.5px solid var(--gold);overflow:hidden;cursor:pointer;box-shadow:0 0 18px rgba(245,179,1,0.22);}
+  .starter-banner:active{transform:scale(0.985);}
+  .sb-flare{position:absolute;top:-50%;left:-40%;width:55%;height:200%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);transform:rotate(20deg);animation:sbFlare 3.6s ease-in-out infinite;pointer-events:none;}
+  @keyframes sbFlare{0%{left:-40%}60%,100%{left:135%}}
+  .sb-badge{position:absolute;top:0;right:0;background:var(--gold);color:#1a1205;font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-bottom-left-radius:9px;}
+  .sb-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .sb-gift{font-size:38px;line-height:1;}
+  .sb-title{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:800;color:var(--gold);letter-spacing:1px;}
+  .sb-loot{font-size:12px;color:var(--text-sec);margin-top:3px;font-weight:600;}
+  .sb-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .sb-timer{font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;color:#FF6B6B;}
+  .sb-buy{display:flex;align-items:center;background:linear-gradient(135deg,#F5B301,#E08A00);border:none;border-radius:10px;padding:10px 18px;color:#1a1205;font-size:15px;font-weight:800;font-family:'Orbitron',sans-serif;cursor:pointer;}
+  .sb-usd{font-size:11px;font-family:'Share Tech Mono',monospace;opacity:.75;margin-left:4px;}
+
   /* ══ COIN BUNDLES ══ */
   .bundle-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px;}
   .bundle-card{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 12px 12px;text-align:center;cursor:pointer;transition:transform .1s ease,border-color .2s;overflow:hidden;}
@@ -683,6 +698,21 @@
           <div class="lb-rank-txt">Claim your daily reward</div>
         </div>
         <span class="lb-arrow">›</span>
+      </div>
+      <div class="starter-banner" id="starterBanner" style="display:none;" onclick="buyStarter()">
+        <div class="sb-flare"></div>
+        <div class="sb-badge">ONE-TIME OFFER</div>
+        <div class="sb-top">
+          <div class="sb-gift">🎁</div>
+          <div class="sb-headline">
+            <div class="sb-title">STARTER PACK</div>
+            <div class="sb-loot">🪙 5,000 &nbsp;·&nbsp; 💎 30 &nbsp;·&nbsp; 🔫 AK-47</div>
+          </div>
+        </div>
+        <div class="sb-bottom">
+          <div class="sb-timer">⏳ <span id="starterTimer">23:59:59</span></div>
+          <button class="sb-buy">⭐ 50 &nbsp;<span class="sb-usd">$1</span></button>
+        </div>
       </div>
       <div class="soldier-area">
         <div class="soldier-bg"></div>
@@ -1213,6 +1243,7 @@ function renderHome(){
   $('homeRank').textContent=S.myRank?('#'+fmtN(S.myRank)):'—';
   $('homeScore').textContent=fmtN(p.score);
   $('dailyBanner').style.display=S.dailyAvailable?'flex':'none';
+  renderStarter();
   const f=activeFighter();if(!f)return;
   $('homeSoldier').textContent=f.avatar;
   $('hfAvatar').textContent=f.avatar;$('hfName').textContent=f.name;
@@ -1221,6 +1252,55 @@ function renderHome(){
   const pw=fighterPower(f);
   $('hfPwBar').style.width=Math.min(100,pw/1.6)+'%';$('hfPwVal').textContent=pw;
   $('hfXpBar').style.width=fLvlPct(f)+'%';$('hfXpVal').textContent=fLvlPct(f)+'%';
+}
+
+/* ── STARTER PACK ── */
+let STARTER_TIMER=null;
+function renderStarter(){
+  const o=S.starterOffer;const el=$('starterBanner');if(!el)return;
+  if(!o||!o.available||Date.now()>=o.expiresAt){
+    el.style.display='none';
+    if(STARTER_TIMER){clearInterval(STARTER_TIMER);STARTER_TIMER=null;}
+    return;
+  }
+  el.style.display='block';
+  tickStarter();
+  if(!STARTER_TIMER)STARTER_TIMER=setInterval(tickStarter,1000);
+}
+function tickStarter(){
+  const o=S.starterOffer;if(!o){return;}
+  let s=Math.floor((o.expiresAt-Date.now())/1000);
+  if(s<=0){if(STARTER_TIMER){clearInterval(STARTER_TIMER);STARTER_TIMER=null;}renderStarter();return;}
+  const z=n=>String(n).padStart(2,'0');
+  const t=$('starterTimer');if(t)t.textContent=z(Math.floor(s/3600))+':'+z(Math.floor(s%3600/60))+':'+z(s%60);
+}
+async function buyStarter(){
+  haptic('medium');
+  const o=S.starterOffer;if(!o||!o.available){toast('Offer no longer available','red');return;}
+  if(!tg||!tg.openInvoice){toast('Stars payments need the Telegram app','red');return;}
+  try{
+    const r=await api('invoice',{itemKey:'starter'});
+    tg.openInvoice(r.link,function(status){
+      if(status==='paid'){toast('⭐ Payment received!','green');waitForStarterGrant();}
+      else if(status==='failed'){toast('Payment failed — try again','red');}
+    });
+  }catch(e){toast(e.message,'red');}
+}
+async function waitForStarterGrant(){
+  for(let i=0;i<7;i++){
+    await new Promise(r=>setTimeout(r,1300));
+    try{
+      const st=await api('auth',{});
+      Object.assign(S,st);
+      if(S.player.starter_bought||!(S.starterOffer&&S.starterOffer.available)){
+        hapticOk();confetti(70);renderHome();
+        toast('🎉 Starter Pack unlocked — 5,000🪙 + 30💎 + AK-47!','green');
+        return;
+      }
+    }catch(e){}
+  }
+  renderHome();
+  toast('Purchase is processing — it will appear shortly','');
 }
 
 /* ── FIGHTERS ── */
@@ -1856,7 +1936,7 @@ function showResults(){
   const win=b.placement===1,top10=b.placement<=10;
   $('resPlace').textContent='#'+b.placement;
   $('resPlace').className='placement-num '+(win?'win':top10?'top10':'normal');
-  $('resTitle').textContent=win?'MANAGER OF THE ZONE':top10?'TOP 10 FINISH':'BETTER LUCK NEXT DROP';
+  $('resTitle').textContent=r.firstWin?'🎖️ FIRST VICTORY!':win?'MANAGER OF THE ZONE':top10?'TOP 10 FINISH':'BETTER LUCK NEXT DROP';
   $('resTitle').className='placement-title '+(win?'win':top10?'top10':'normal');
   $('resDur').textContent=fmtT(b.duration);$('resMap').textContent=b.map;
   animNum('resKills',b.kills);animNum('resDmg',b.damage);
@@ -1886,7 +1966,11 @@ function showResults(){
   if(r.recent)S.recent=r.recent;
   updateTaskDot();
   showScreen('results');
-  if(win)setTimeout(()=>confetti(60),500);
+  if(r.firstWin){
+    setTimeout(()=>confetti(90),400);
+    setTimeout(()=>{hapticOk();toast('🎖️ Welcome, Commander — your first victory! Claim your Starter Pack on Home.','green');},900);
+    renderHome();
+  } else if(win)setTimeout(()=>confetti(60),500);
 }
 function animNum(id,target){
   const el=$(id);const start=Date.now();const dur=1100;
