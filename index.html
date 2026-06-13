@@ -548,6 +548,22 @@
   .ref-skel{height:54px;margin:0 16px 6px;border-radius:10px;background:linear-gradient(90deg,var(--bg-card),var(--bg-deep),var(--bg-card));background-size:200% 100%;animation:refShimmer 1.2s infinite;}
   @keyframes refShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
+  /* ══ TELEGRAM AVATARS ══ */
+  .tg-pic{width:100%;height:100%;object-fit:cover;display:block;}
+  .emoji-av{display:flex;align-items:center;justify-content:center;width:100%;height:100%;line-height:1;}
+  .h-avatar,.hero-avatar,.lb-avatar,.fr-avatar,.pod-avatar,.fb-avatar{overflow:hidden;}
+
+  /* ══ NAME / ONBOARDING ══ */
+  .name-input{width:100%;background:var(--bg-deep);border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:16px;font-family:'Rajdhani',sans-serif;font-weight:600;outline:none;text-align:center;}
+  .name-input:focus{border-color:var(--accent);}
+  .ob-sub{font-size:13px;color:var(--text-sec);line-height:1.45;margin-bottom:14px;text-align:center;}
+  .ob-tag{display:inline-flex;align-items:center;gap:6px;background:var(--bg-deep);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text-muted);margin:0 auto 14px;font-family:'Share Tech Mono',monospace;}
+  .ob-tag strong{color:var(--cyan);}
+  .ob-hint{font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px;line-height:1.4;}
+  .ob-btn{width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent-2,#2563EB));border:none;border-radius:11px;color:#fff;font-size:15px;font-weight:800;letter-spacing:1px;font-family:'Orbitron',sans-serif;cursor:pointer;}
+  .ob-btn:disabled{opacity:.5;}
+  .ob-skip{width:100%;margin-top:8px;padding:10px;background:none;border:none;color:var(--text-muted);font-size:13px;cursor:pointer;}
+
   /* ══ BOOSTED DROP PILL ══ */
   .boost-pill{margin:0 0 10px;padding:9px 14px;border-radius:11px;background:linear-gradient(135deg,rgba(34,211,238,0.14),rgba(245,179,1,0.10));border:1px solid var(--cyan);font-size:12px;color:var(--text-sec);text-align:center;line-height:1.35;}
   .boost-pill strong{color:var(--cyan);}
@@ -998,6 +1014,7 @@
       <div class="sec-label">Recent Battles</div>
       <div id="profHistory"></div>
       <div class="sec-label">More</div>
+      <div class="pa-btn" onclick="openNameModal()"><span class="pa-icon">✏️</span><span class="pa-text">Change Name</span><span class="pa-arrow">›</span></div>
       <div class="pa-btn" onclick="showScreen('friends')"><span class="pa-icon">🤝</span><span class="pa-text">Referral Program</span><span class="pa-arrow">›</span></div>
       <div class="pa-btn" onclick="openLeaderboard()"><span class="pa-icon">🏆</span><span class="pa-text">Leaderboard</span><span class="pa-arrow">›</span></div>
       <div style="height:20px;"></div>
@@ -1014,6 +1031,28 @@
   </div>
 
   <!-- ═══════════ DEPLOY MODAL ═══════════ -->
+  <div class="modal-overlay" id="onboardModal">
+    <div class="modal" style="text-align:center;">
+      <div class="modal-title">👋 WELCOME, COMMANDER</div>
+      <div class="ob-tag" id="obTgTag">🆔 <strong id="obTgName">—</strong></div>
+      <div class="ob-sub">This is your callsign in the zone. Keep your Telegram name or choose a custom one.</div>
+      <input class="name-input" id="obNameInput" maxlength="20" placeholder="Your callsign" autocomplete="off">
+      <button class="ob-btn" id="obSaveBtn" onclick="saveOnboard()">⚔️ ENTER THE ZONE</button>
+      <div class="ob-hint">You can change it once a week later from your Profile.</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="nameModal">
+    <div class="modal" style="text-align:center;">
+      <button class="modal-close" onclick="closeModal('nameModal')">✕</button>
+      <div class="modal-title">✏️ CHANGE NAME</div>
+      <div class="ob-sub" id="nameModalSub">Pick a new in-game name.</div>
+      <input class="name-input" id="nameInput" maxlength="20" placeholder="New name" autocomplete="off">
+      <button class="ob-btn" id="nameSaveBtn" onclick="saveName()">Save</button>
+      <div class="ob-hint">Your name can be changed once every 7 days.</div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="deployModal">
     <div class="modal">
       <button class="modal-close" onclick="closeModal('deployModal')">✕</button>
@@ -1223,7 +1262,7 @@ function pickChip(el){el.parentElement.querySelectorAll('.chip').forEach(c=>c.cl
 async function boot(){
   $('splashFill').style.width='30%';
   try{
-    const st=await api('auth',{});
+    const st=await api('auth',{photoUrl:(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.photo_url)||''});
     Object.assign(S,st);
     $('splashFill').style.width='100%';
     $('splashStatus').textContent='Squad ready. Entering the zone...';
@@ -1231,7 +1270,8 @@ async function boot(){
       $('splash').classList.add('hide');
       showScreen('home');
       updateTaskDot();
-      if(S.dailyAvailable){setTimeout(openDaily,500);}
+      if(S.isNew){setTimeout(openOnboarding,450);}
+      else if(S.dailyAvailable){setTimeout(openDaily,500);}
     },600);
   }catch(e){
     $('splashStatus').textContent='Connection failed — retrying...';
@@ -1242,7 +1282,7 @@ async function boot(){
 /* ── HOME ── */
 function renderHome(){
   const p=S.player;if(!p)return;
-  $('homeAvatar').textContent=p.avatar;$('homeName').textContent=p.display_name;
+  $('homeAvatar').innerHTML=picMarkup(p.photo_url,p.avatar);$('homeName').textContent=p.display_name;
   $('homeLevel').textContent='Lv.'+p.level;
   $('homeCoins').textContent=fmtN(p.coins);$('homeGems').textContent=fmtN(p.gems);
   $('homeKills').textContent=fmtN(p.kills);$('homeWins').textContent=fmtN(p.victories);
@@ -1309,6 +1349,60 @@ async function waitForStarterGrant(){
   }
   renderHome();
   toast('Purchase is processing — it will appear shortly','');
+}
+
+/* ── NAME / ONBOARDING ── */
+function tgUser(){return (tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user)||{};}
+function openOnboarding(){
+  const u=tgUser();
+  const real=[u.first_name,u.last_name].filter(Boolean).join(' ')||u.username||'';
+  $('obTgName').textContent=u.username?('@'+u.username):(real||'Telegram user');
+  $('obNameInput').value=S.player.display_name||real||'';
+  $('onboardModal').classList.add('show');
+  setTimeout(()=>$('obNameInput').focus(),200);
+}
+async function saveOnboard(){
+  const name=$('obNameInput').value.trim();
+  const btn=$('obSaveBtn');btn.disabled=true;
+  try{
+    if(name&&name!==S.player.display_name){
+      const r=await api('setname',{name});
+      if(r.player)S.player=r.player;
+    }
+    haptic('medium');closeModal('onboardModal');renderHome();
+  }catch(e){toast(e.message,'red');}
+  btn.disabled=false;
+}
+function nameCooldownDays(){
+  const t=S.player.name_changed_at;if(!t)return 0;
+  const left=7*86400000-(Date.now()-new Date(t).getTime());
+  return left>0?Math.ceil(left/86400000):0;
+}
+function openNameModal(){
+  haptic();
+  const days=nameCooldownDays();
+  const input=$('nameInput'),btn=$('nameSaveBtn');
+  input.value=S.player.display_name||'';
+  if(days>0){
+    $('nameModalSub').innerHTML='⏳ You can change your name again in <strong>'+days+' day'+(days>1?'s':'')+'</strong>.';
+    input.disabled=true;btn.disabled=true;
+  }else{
+    $('nameModalSub').textContent='Pick a new in-game name.';
+    input.disabled=false;btn.disabled=false;
+  }
+  $('nameModal').classList.add('show');
+  if(days<=0)setTimeout(()=>input.focus(),200);
+}
+async function saveName(){
+  const name=$('nameInput').value.trim();
+  if(!name){toast('Enter a name','red');return;}
+  const btn=$('nameSaveBtn');btn.disabled=true;
+  try{
+    const r=await api('setname',{name});
+    if(r.player)S.player=r.player;
+    haptic('medium');hapticOk();closeModal('nameModal');renderProfile();renderHome();
+    toast('✓ Name updated!','green');
+  }catch(e){toast(e.message,'red');btn.disabled=false;}
 }
 
 /* ── FIGHTERS ── */
@@ -2240,7 +2334,7 @@ async function loadLeaderboard(){
     html+='<div class="lb-list">';
     rows.slice(3).forEach(x=>{
       const me=x.tg_id===S.player.tg_id;
-      html+='<div class="lb-row'+(me?' me':'')+'"><span class="lb-rank">'+x.rank+'</span><div class="lb-avatar">'+x.avatar+'</div>'+
+      html+='<div class="lb-row'+(me?' me':'')+'"><span class="lb-rank">'+x.rank+'</span><div class="lb-avatar">'+picMarkup(x.photo_url,x.avatar)+'</div>'+
         '<div class="lb-info2"><div class="lb-name">'+esc(x.name)+(me?' ← YOU':'')+'</div><div class="lb-meta"><span class="lb-tag">Lv.'+x.level+'</span></div></div>'+
         '<div class="lb-stats"><span class="lb-score">'+fmtN(x.score)+'</span><span class="lb-kills">💀 '+fmtN(x.kills)+'</span></div></div>';
     });
@@ -2248,16 +2342,22 @@ async function loadLeaderboard(){
     $('lbContent').innerHTML=html;
     const p=S.player;
     $('myRankNum').textContent='#'+fmtN(r.myRank||0);
-    $('myRankAvatar').textContent=p.avatar;$('myRankName').textContent=p.display_name;
+    $('myRankAvatar').innerHTML=picMarkup(p.photo_url,p.avatar);$('myRankName').textContent=p.display_name;
     $('myRankMeta').textContent='Lv.'+p.level+' · '+fmtN(p.kills)+' kills · '+fmtN(p.victories)+' wins';
     $('myRankScore').textContent=fmtN(p.score);
   }catch(e){$('lbContent').innerHTML='<div class="empty-state"><div class="empty-text">Failed to load</div></div>';}
 }
 function podCard(x,cls,rcls,extra){
   if(!x)return '';
-  return '<div class="podium-card '+cls+'">'+extra+'<div class="pod-rank '+rcls+'">#'+x.rank+'</div><div class="pod-avatar">'+x.avatar+'</div><div class="pod-name">'+esc(x.name)+'</div><div class="pod-score">'+fmtN(x.score)+' pts</div><div class="pod-kills">💀 '+fmtN(x.kills)+'</div></div>';
+  return '<div class="podium-card '+cls+'">'+extra+'<div class="pod-rank '+rcls+'">#'+x.rank+'</div><div class="pod-avatar">'+picMarkup(x.photo_url,x.avatar)+'</div><div class="pod-name">'+esc(x.name)+'</div><div class="pod-score">'+fmtN(x.score)+' pts</div><div class="pod-kills">💀 '+fmtN(x.kills)+'</div></div>';
 }
 function esc(s){return String(s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+/* Render a Telegram avatar photo, falling back to the stored emoji */
+function picMarkup(photo,emoji){
+  const fb=esc(emoji||'🧔');
+  if(photo)return '<img class="tg-pic" src="'+esc(photo)+'" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'emoji-av\',textContent:this.dataset.fb}))" data-fb="'+fb+'">';
+  return '<span class="emoji-av">'+fb+'</span>';
+}
 
 /* ── FRIENDS / REFERRAL ── */
 const REF_TIERS=[[1,'First Invite','🎯','+500🪙'],[3,'Squad Builder','⚡','+1,500🪙'],[5,'Recruiter','🔥','+100💎'],[10,'Commander','🏅','+250💎'],[25,'Warlord','👑','+1,000💎']];
@@ -2288,7 +2388,7 @@ async function loadReferrals(){
     }
     $('refListCount').textContent=players.length;
     $('refList').innerHTML=players.map(x=>
-      '<div class="friend-row"><div class="fr-avatar">'+(x.avatar||'🎖️')+'</div>'+
+      '<div class="friend-row"><div class="fr-avatar">'+picMarkup(x.photo_url,x.avatar||'🎖️')+'</div>'+
       '<div class="fr-info"><div class="fr-name">'+esc(x.name)+'</div>'+
       '<div class="fr-meta">Joined '+timeAgo(x.joined_at)+'</div></div>'+
       '<div class="fr-stats"><span class="fr-lvl">Lv.'+x.level+'</span>'+
@@ -2311,7 +2411,7 @@ function shareRefLink(){
 /* ── PROFILE ── */
 function renderProfile(){
   const p=S.player;
-  $('profAvatar').textContent=p.avatar;$('profName').textContent=p.display_name;
+  $('profAvatar').innerHTML=picMarkup(p.photo_url,p.avatar);$('profName').textContent=p.display_name;
   $('profId').textContent='ID: #DC-'+p.tg_id;
   $('profLevel').textContent='Lv.'+p.level;
   const lvlBase=(p.level-1)*1000;
