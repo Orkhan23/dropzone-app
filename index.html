@@ -751,11 +751,6 @@
       </div>
     </div>
     <div class="content" style="display:flex;flex-direction:column;">
-      <div class="stats-row">
-        <div class="stat-card"><div class="sc-val k" id="homeKills">0</div><div class="sc-label">Total Kills</div></div>
-        <div class="stat-card"><div class="sc-val w" id="homeWins">0</div><div class="sc-label">Victories</div></div>
-        <div class="stat-card"><div class="sc-val r" id="homeTop10">0%</div><div class="sc-label">Top 10 Rate</div></div>
-      </div>
       <div class="lb-mini" onclick="openLeaderboard()">
         <span class="lb-icon">🏆</span>
         <div class="lb-info">
@@ -1398,8 +1393,6 @@ function renderHome(){
   $('homeAvatar').innerHTML=picMarkup(p.photo_url,p.avatar);$('homeName').textContent=p.display_name;
   $('homeLevel').textContent='Lv.'+p.level;
   $('homeCoins').textContent=fmtN(p.coins);$('homeGems').textContent=fmtN(p.gems);
-  $('homeKills').textContent=fmtN(p.kills);$('homeWins').textContent=fmtN(p.victories);
-  $('homeTop10').textContent=(p.battles_count?Math.round(p.top10_count/p.battles_count*100):0)+'%';
   $('homeRank').textContent=S.myRank?('#'+fmtN(S.myRank)):'—';
   $('homeScore').textContent=fmtN(p.score);
   $('dailyBanner').style.display=S.dailyAvailable?'flex':'none';
@@ -1726,7 +1719,7 @@ async function claimDaily(){
     const r=await api('daily',{});
     S.player=r.player;S.dailyAvailable=false;S.tasks=r.tasks||S.tasks;
     hapticOk();confetti(60);
-    openDaily();renderHome();updateTaskDot();
+    closeModal('dailyModal');renderHome();updateTaskDot();
     toast('🔥 Daily reward claimed! +'+(r.reward.c||0)+'🪙'+(r.reward.g?' +'+r.reward.g+'💎':''),'green');
   }catch(e){toast(e.message,'red');}
 }
