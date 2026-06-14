@@ -553,6 +553,40 @@
   .emoji-av{display:flex;align-items:center;justify-content:center;width:100%;height:100%;line-height:1;}
   .h-avatar,.hero-avatar,.lb-avatar,.fr-avatar,.pod-avatar,.fb-avatar{overflow:hidden;}
 
+  .cur-plus{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;border-radius:50%;background:var(--gold);color:var(--bg-deep);font-size:12px;font-weight:800;line-height:1;}
+
+  /* ══ BATTLE PASS ══ */
+  .bp-banner-dot{width:9px;height:9px;border-radius:50%;background:var(--green);margin-right:4px;box-shadow:0 0 8px var(--green);}
+  .bp-hero{margin:0 16px 14px;padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,0.18),var(--bg-card));border:1px solid var(--purple);}
+  .bp-season{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:800;color:var(--purple);letter-spacing:1px;}
+  .bp-timer{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text-muted);margin:4px 0 12px;}
+  .bp-tierline{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--text-sec);margin-bottom:6px;}
+  .bp-xpbar{height:8px;border-radius:4px;background:var(--bg-deep);overflow:hidden;}
+  .bp-xpfill{height:100%;background:linear-gradient(90deg,var(--purple),var(--cyan));border-radius:4px;transition:width .5s ease;}
+  .bp-cta{margin:0 16px 12px;padding:14px;border-radius:13px;background:linear-gradient(135deg,#7C3AED,#5B21B6);text-align:center;cursor:pointer;}
+  .bp-cta:active{transform:scale(0.98);}
+  .bp-cta-h{font-family:'Orbitron',sans-serif;font-size:15px;font-weight:800;color:#fff;letter-spacing:.5px;}
+  .bp-cta-p{font-size:12px;color:rgba(255,255,255,.85);margin:3px 0 10px;}
+  .bp-cta-btn{display:inline-block;background:#fff;color:#5B21B6;font-weight:800;font-size:14px;border-radius:9px;padding:9px 22px;font-family:'Orbitron',sans-serif;}
+  .bp-active-badge{margin:0 16px 12px;padding:10px;border-radius:11px;background:var(--green-dim);border:1px solid var(--green);text-align:center;color:var(--green);font-weight:800;font-size:13px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;}
+  .bp-claim{width:calc(100% - 32px);margin:0 16px 14px;padding:13px;background:linear-gradient(135deg,var(--gold),#E08A00);border:none;border-radius:11px;color:#1a1205;font-size:15px;font-weight:800;font-family:'Orbitron',sans-serif;cursor:pointer;}
+  .bp-claim:disabled{opacity:.4;filter:grayscale(.6);}
+  .bp-legend{display:flex;gap:18px;justify-content:center;margin:0 16px 12px;font-size:11px;color:var(--text-muted);font-weight:700;}
+  .bp-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:4px;}
+  .bp-dot.free{background:var(--cyan);}
+  .bp-dot.prem{background:var(--purple);}
+  .bp-row{display:flex;align-items:stretch;gap:8px;margin:0 16px 8px;}
+  .bp-tier-no{flex-shrink:0;width:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;font-family:'Orbitron',sans-serif;font-weight:800;font-size:15px;color:var(--text);}
+  .bp-tier-no small{font-size:8px;color:var(--text-muted);font-weight:600;letter-spacing:.5px;}
+  .bp-cell{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);font-size:13px;font-weight:700;color:var(--text-sec);position:relative;}
+  .bp-cell.free{border-left:3px solid var(--cyan);}
+  .bp-cell.prem{border-left:3px solid var(--purple);}
+  .bp-cell.claimable{border-color:var(--gold);background:var(--gold-dim);color:var(--text);}
+  .bp-cell.claimed{opacity:.5;}
+  .bp-cell.locked{opacity:.4;}
+  .bp-cell .bp-check{position:absolute;top:3px;right:5px;font-size:10px;color:var(--green);}
+  .bp-cell .bp-lock{position:absolute;top:3px;right:5px;font-size:9px;color:var(--text-muted);}
+
   /* ══ INTRO CAROUSEL ══ */
   .intro-overlay{position:fixed;inset:0;z-index:600;background:radial-gradient(circle at 50% 28%,#10243a,#050a12 72%);display:none;flex-direction:column;}
   .intro-overlay.show{display:flex;animation:modIn .3s ease-out;}
@@ -712,7 +746,7 @@
         </div>
       </div>
       <div class="h-right">
-        <div class="cur"><span class="cur-icon">🪙</span><span class="cur-val" id="homeCoins">0</span></div>
+        <div class="cur" onclick="openShopCoins()" style="cursor:pointer;"><span class="cur-icon">🪙</span><span class="cur-val" id="homeCoins">0</span><span class="cur-plus">+</span></div>
         <div class="cur"><span class="cur-icon">💎</span><span class="cur-val" id="homeGems">0</span></div>
       </div>
     </div>
@@ -736,6 +770,15 @@
           <div class="lb-title" style="color:var(--gold);">Daily Strike Ready!</div>
           <div class="lb-rank-txt">Claim your daily reward</div>
         </div>
+        <span class="lb-arrow">›</span>
+      </div>
+      <div class="lb-mini" id="bpBanner" style="display:none;border-color:var(--purple);" onclick="openBattlePass()">
+        <span class="lb-icon">🎖️</span>
+        <div class="lb-info">
+          <div class="lb-title" style="color:var(--purple);">Battle Pass <span id="bpBannerTier"></span></div>
+          <div class="lb-rank-txt" id="bpBannerSub">Season 1</div>
+        </div>
+        <span class="bp-banner-dot" id="bpBannerDot" style="display:none;"></span>
         <span class="lb-arrow">›</span>
       </div>
       <div class="starter-banner" id="starterBanner" style="display:none;" onclick="buyStarter()">
@@ -939,7 +982,7 @@
     <div class="tabs">
       <button class="tab active" onclick="shopTab('weapons',this)">Weapons</button>
       <button class="tab" onclick="shopTab('equip',this)">Equipment</button>
-      <button class="tab" onclick="shopTab('coins',this)">Coins</button>
+      <button class="tab" id="shopTabCoins" onclick="shopTab('coins',this)">Coins</button>
     </div>
     <div class="content" id="shopContent"></div>
   </div>
@@ -1031,9 +1074,31 @@
       <div class="sec-label">Recent Battles</div>
       <div id="profHistory"></div>
       <div class="sec-label">More</div>
+      <div class="pa-btn" onclick="openBattlePass()"><span class="pa-icon">🎖️</span><span class="pa-text">Battle Pass</span><span class="pa-arrow">›</span></div>
       <div class="pa-btn" onclick="openNameModal()"><span class="pa-icon">✏️</span><span class="pa-text">Change Name</span><span class="pa-arrow">›</span></div>
       <div class="pa-btn" onclick="showScreen('friends')"><span class="pa-icon">🤝</span><span class="pa-text">Referral Program</span><span class="pa-arrow">›</span></div>
       <div class="pa-btn" onclick="openLeaderboard()"><span class="pa-icon">🏆</span><span class="pa-text">Leaderboard</span><span class="pa-arrow">›</span></div>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ BATTLE PASS ═══════════ -->
+  <div class="screen" id="scr-bp">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div class="page-title">BATTLE PASS</div>
+    </div>
+    <div class="content">
+      <div class="bp-hero">
+        <div class="bp-season" id="bpSeasonName">Season 1</div>
+        <div class="bp-timer">⏳ <span id="bpTimer">—</span></div>
+        <div class="bp-tierline"><span id="bpTierLabel">Tier 0 / 50</span><span id="bpXpLabel">0 XP</span></div>
+        <div class="bp-xpbar"><div class="bp-xpfill" id="bpXpFill" style="width:0%"></div></div>
+      </div>
+      <div id="bpPremiumCta"></div>
+      <button class="bp-claim" id="bpClaimBtn" onclick="claimBP()">Claim Rewards</button>
+      <div class="bp-legend"><span><i class="bp-dot free"></i> Free</span><span><i class="bp-dot prem"></i> Premium</span></div>
+      <div id="bpTiers"></div>
       <div style="height:20px;"></div>
     </div>
   </div>
@@ -1299,6 +1364,7 @@ function showScreen(id){
   if(id==='tasks')renderTasks();
   if(id==='friends')renderFriends();
   if(id==='profile')renderProfile();
+  if(id==='bp')renderBattlePass();
 }
 function navTo(id,el){haptic();showScreen(id);}
 function openLeaderboard(){haptic();showScreen('leaderboard');loadLeaderboard();}
@@ -1317,8 +1383,8 @@ async function boot(){
       $('splash').classList.add('hide');
       showScreen('home');
       updateTaskDot();
-      if(S.isNew){setTimeout(openIntro,400);}
-      else if(S.dailyAvailable){setTimeout(openDaily,500);}
+      // TEST MODE: intro shows on EVERY launch. For production revert to: if(S.isNew){...}
+      setTimeout(openIntro,400);
     },600);
   }catch(e){
     $('splashStatus').textContent='Connection failed — retrying...';
@@ -1339,6 +1405,12 @@ function renderHome(){
   $('dailyBanner').style.display=S.dailyAvailable?'flex':'none';
   renderStarter();
   $('boostPill').style.display=S.boostAvailable?'block':'none';
+  if(S.battlePass){
+    $('bpBanner').style.display='flex';
+    $('bpBannerTier').textContent='· Tier '+S.battlePass.tier;
+    $('bpBannerSub').textContent=S.battlePass.name+(S.battlePass.premium?' · Premium':'');
+    $('bpBannerDot').style.display=bpClaimable()?'inline-block':'none';
+  }
   const f=activeFighter();if(!f)return;
   $('homeSoldier').textContent=f.avatar;
   $('hfAvatar').textContent=f.avatar;$('hfName').textContent=f.name;
@@ -1398,6 +1470,91 @@ async function waitForStarterGrant(){
   toast('Purchase is processing — it will appear shortly','');
 }
 
+/* ── BATTLE PASS ── */
+function rewardChip(r){
+  const parts=[];
+  if(r.c)parts.push('🪙'+fmtN(r.c));
+  if(r.g)parts.push('💎'+r.g);
+  if(r.x4)parts.push('⚡4x');
+  if(r.fighter)parts.push('🎖️Fighter');
+  return parts.join(' ');
+}
+function bpClaimable(){
+  const b=S.battlePass;if(!b)return false;
+  return b.tier>b.claimFree || (b.premium && b.tier>b.claimPrem);
+}
+function bpTimeLeft(endsAt){
+  const ms=new Date(endsAt).getTime()-Date.now();
+  if(ms<=0)return 'Season ended';
+  const d=Math.floor(ms/86400000),h=Math.floor(ms%86400000/3600000);
+  return d>0?(d+'d '+h+'h left'):(h+'h left');
+}
+function openBattlePass(){haptic();showScreen('bp');}
+function renderBattlePass(){
+  const b=S.battlePass;if(!b)return;
+  $('bpSeasonName').textContent=b.name;
+  $('bpTimer').textContent=bpTimeLeft(b.endsAt);
+  $('bpTierLabel').textContent='Tier '+b.tier+' / '+b.tiers;
+  const intoTier=b.xp%b.xpPerTier;
+  $('bpXpLabel').textContent=fmtN(intoTier)+' / '+fmtN(b.xpPerTier)+' XP';
+  $('bpXpFill').style.width=(b.tier>=b.tiers?100:Math.round(intoTier/b.xpPerTier*100))+'%';
+  // premium CTA / active badge
+  $('bpPremiumCta').innerHTML=b.premium
+    ? '<div class="bp-active-badge">⭐ PREMIUM ACTIVE</div>'
+    : '<div class="bp-cta" onclick="buyBattlePass()"><div class="bp-cta-h">🎖️ Unlock Premium Pass</div><div class="bp-cta-p">Unlock the premium track — exclusive fighter, gems & 2-3x rewards all season.</div><span class="bp-cta-btn">⭐ '+fmtN(b.premiumStars)+'</span></div>';
+  // claim button
+  const cb=$('bpClaimBtn');const can=bpClaimable();
+  cb.disabled=!can;cb.textContent=can?'🎁 Claim Rewards':'No rewards to claim yet';
+  // tier list
+  $('bpTiers').innerHTML=(b.rewards||[]).map(t=>{
+    const freeCls=t.tier<=b.claimFree?'claimed':(t.tier<=b.tier?'claimable':'locked');
+    const freeMark=t.tier<=b.claimFree?'<span class="bp-check">✓</span>':(t.tier<=b.tier?'':'<span class="bp-lock">🔒</span>');
+    let premState,premMark;
+    if(!b.premium){premState='locked';premMark='<span class="bp-lock">🔒</span>';}
+    else if(t.tier<=b.claimPrem){premState='claimed';premMark='<span class="bp-check">✓</span>';}
+    else if(t.tier<=b.tier){premState='claimable';premMark='';}
+    else{premState='locked';premMark='<span class="bp-lock">🔒</span>';}
+    return '<div class="bp-row"><div class="bp-tier-no">'+t.tier+'<small>TIER</small></div>'+
+      '<div class="bp-cell free '+freeCls+'">'+rewardChip(t.free)+freeMark+'</div>'+
+      '<div class="bp-cell prem '+premState+'">'+rewardChip(t.prem)+premMark+'</div></div>';
+  }).join('');
+}
+async function buyBattlePass(){
+  haptic('medium');
+  if(!tg||!tg.openInvoice){toast('Stars payments need the Telegram app','red');return;}
+  try{
+    const r=await api('invoice',{itemKey:'battlepass'});
+    tg.openInvoice(r.link,function(status){
+      if(status==='paid'){toast('⭐ Payment received!','green');waitForBP();}
+      else if(status==='failed'){toast('Payment failed — try again','red');}
+    });
+  }catch(e){toast(e.message,'red');}
+}
+async function waitForBP(){
+  for(let i=0;i<7;i++){
+    await new Promise(r=>setTimeout(r,1300));
+    try{
+      const st=await api('auth',{});Object.assign(S,st);
+      if(S.battlePass&&S.battlePass.premium){hapticOk();confetti(60);renderBattlePass();renderHome();toast('🎖️ Premium Pass unlocked!','green');return;}
+    }catch(e){}
+  }
+  renderBattlePass();toast('Purchase is processing — it will appear shortly','');
+}
+async function claimBP(){
+  haptic('medium');
+  try{
+    const r=await api('bpclaim',{});
+    if(r.player)S.player=r.player;
+    if(r.battlePass)S.battlePass=r.battlePass;
+    if(r.fighters)S.fighters=r.fighters;
+    hapticOk();confetti(45);renderBattlePass();renderHome();
+    const g=r.granted||{};const bits=[];
+    if(g.coins)bits.push('🪙'+fmtN(g.coins));if(g.gems)bits.push('💎'+g.gems);
+    if(g.x4)bits.push('⚡'+g.x4+' ticket');if(g.fighter)bits.push('🎖️ Exclusive fighter');
+    toast('✓ Claimed: '+(bits.join(' · ')||'rewards'),'green');
+  }catch(e){toast(e.message,'red');}
+}
+
 /* ── INTRO CAROUSEL (first launch, once) ── */
 let introIdx=0;
 function openIntro(){
@@ -1423,7 +1580,8 @@ function introNext(){
 }
 function finishIntro(){
   $('introOverlay').classList.remove('show');
-  setTimeout(openOnboarding,250);
+  if(S.isNew){setTimeout(openOnboarding,250);}
+  else if(S.dailyAvailable){setTimeout(openDaily,300);}
 }
 
 /* ── NAME / ONBOARDING ── */
@@ -2135,12 +2293,14 @@ function showResults(){
   if(b.gems_gain)rows.push(['💎','Gem Bonus','gems','+'+b.gems_gain]);
   if(BTL.airdropBonus)rows.push(['📦','Airdrop Bonus','coins','+'+BTL.airdropBonus.c]);
   rows.push(['⭐','Battle XP','xp','+'+b.xp_gain]);
+  if(r.bpGain)rows.push(['🎖️','Battle Pass XP','xp','+'+r.bpGain]);
   if(r.boosted){rows.unshift(['⚡','Boosted Drop — 2x Coins!','coins','✓']);S.boostAvailable=false;}
   $('resRewards').innerHTML=rows.map(x=>'<div class="rew-row"><div class="rew-left"><span style="font-size:16px;">'+x[0]+'</span><span class="rew-name">'+x[1]+'</span></div><span class="rew-val '+x[2]+'">'+x[3]+'</span></div>').join('');
   S.player=r.player;
   S.fighters=S.fighters.map(x=>x.id===f.id?f:x);
   S.tasks=r.tasks||S.tasks;
   S.myRank=r.myRank||S.myRank;
+  if(r.battlePass)S.battlePass=r.battlePass;
   if(r.recent)S.recent=r.recent;
   updateTaskDot();
   showScreen('results');
@@ -2192,6 +2352,11 @@ const COIN_BUNDLES={
 };
 let SHOP_TAB='weapons';
 function shopTab(t,el){SHOP_TAB=t;document.querySelectorAll('#scr-shop .tab').forEach(x=>x.classList.remove('active'));el.classList.add('active');renderShop();haptic();}
+function openShopCoins(){
+  haptic();SHOP_TAB='coins';showScreen('shop');
+  document.querySelectorAll('#scr-shop .tab').forEach(x=>x.classList.remove('active'));
+  const c=document.getElementById('shopTabCoins');if(c)c.classList.add('active');
+}
 function rarityCls(t){return t>=4?'legendary':t===3?'epic':t===2?'rare':'';}
 function priceTag(v){return v.g?'💎 '+fmtN(v.g):'🪙 '+fmtN(v.c);}
 function renderShop(){
