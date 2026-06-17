@@ -555,6 +555,11 @@
 
   .cur-plus{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;margin-left:5px;border-radius:50%;background:var(--gold);color:var(--bg-deep);font-size:12px;font-weight:800;line-height:1;}
 
+  /* ══ ITEM IMAGES ══ */
+  .item-pic{width:100%;height:100%;object-fit:contain;display:block;}
+  .ir-icon{overflow:hidden;}
+  .ir-icon .item-pic{width:140%;height:140%;margin:-20%;}
+
   /* ══ BATTLE PASS ══ */
   .bp-banner-dot{width:9px;height:9px;border-radius:50%;background:var(--green);margin-right:4px;box-shadow:0 0 8px var(--green);}
   .bp-hero{margin:0 16px 14px;padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,0.18),var(--bg-card));border:1px solid var(--purple);}
@@ -1305,6 +1310,7 @@ const ITEMS = {
   m16:{name:'M16A4',icon:'🔫',tier:1,cat:'weapons',sect:'Assault Rifles',stat:'PWR +3',c:300,s:5,pwr:3},
   ak47:{name:'AK-47',icon:'🔫',tier:2,cat:'weapons',sect:'Assault Rifles',stat:'PWR +5',c:500,s:8,pwr:5},
   scarh:{name:'SCAR-H',icon:'🔫',tier:3,cat:'weapons',sect:'Assault Rifles',stat:'PWR +9',c:1200,s:18,pwr:9},
+  m416:{name:'M416',img:'img/weapons/m416.png',icon:'🔫',tier:3,cat:'weapons',sect:'Assault Rifles',stat:'PWR +7',c:900,s:13,pwr:7},
   groza:{name:'Groza',icon:'🔫',tier:4,cat:'weapons',sect:'Assault Rifles',stat:'PWR +14',g:200,s:30,pwr:14},
   mini14:{name:'Mini-14',icon:'🎯',tier:2,cat:'weapons',sect:'Snipers',stat:'PWR +6',c:650,s:10,pwr:6},
   awm:{name:'AWM',icon:'🎯',tier:3,cat:'weapons',sect:'Snipers',stat:'PWR +12',g:150,s:25,pwr:12},
@@ -2319,6 +2325,7 @@ const ITEM_DESC={
   m16:'Reliable starter rifle. Low recoil, solid mid-range performance.',
   ak47:'Classic assault rifle with heavy rounds. Great damage per shot.',
   scarh:'Battle-proven rifle with high accuracy and stopping power.',
+  m416:'Versatile, fully-customizable assault rifle. Smooth recoil and reliable in any fight.',
   groza:'Bullpup beast for close-quarters devastation. Rare drop.',
   mini14:'Lightweight marksman rifle. Fast follow-up shots.',
   awm:'Legendary bolt-action sniper. One shot, one elimination.',
@@ -2351,6 +2358,10 @@ function openShopCoins(){
   const c=document.getElementById('shopTabCoins');if(c)c.classList.add('active');
 }
 function rarityCls(t){return t>=4?'legendary':t===3?'epic':t===2?'rare':'';}
+function itemIconHTML(v){
+  if(v.img)return '<img class="item-pic" src="'+v.img+'" alt="" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{textContent:this.dataset.fb}))" data-fb="'+(v.icon||'🔫')+'">';
+  return v.icon||'🔫';
+}
 function priceTag(v){return v.g?'💎 '+fmtN(v.g):'🪙 '+fmtN(v.c);}
 function renderShop(){
   $('shopCoins').textContent=fmtN(S.player.coins);$('shopGems').textContent=fmtN(S.player.gems);
@@ -2379,7 +2390,7 @@ function renderShop(){
 function weaponRow(k,v){
   const owned=S.purchases.includes(k);
   return '<div class="item-row '+rarityCls(v.tier)+'" onclick="openItem(\''+k+'\')">'+
-    '<div class="ir-icon">'+v.icon+'</div>'+
+    '<div class="ir-icon">'+itemIconHTML(v)+'</div>'+
     '<div class="ir-info"><div class="ir-top"><span class="item-name">'+v.name+'</span><span class="tier-badge t'+v.tier+'" style="margin:0;">TIER '+v.tier+'</span></div>'+
     '<div class="item-stat" style="margin:3px 0 0;">'+v.stat+' · '+v.sect.replace(/s$/,'')+'</div></div>'+
     '<div class="ir-right">'+(owned?'<span class="owned-badge" style="position:static;font-size:10px;">OWNED</span>'
@@ -2388,7 +2399,7 @@ function weaponRow(k,v){
 function equipCard(k,v){
   const owned=S.purchases.includes(k);
   return '<div class="item-card '+rarityCls(v.tier)+'" onclick="openItem(\''+k+'\')">'+(owned?'<span class="owned-badge">OWNED</span>':'')+
-    '<div class="item-icon">'+v.icon+'</div><span class="tier-badge t'+v.tier+'">TIER '+v.tier+'</span>'+
+    '<div class="item-icon">'+itemIconHTML(v)+'</div><span class="tier-badge t'+v.tier+'">TIER '+v.tier+'</span>'+
     '<div class="item-name">'+v.name+'</div><div class="item-stat">'+v.stat+'</div>'+
     '<div class="item-price '+(v.g?'gems':'coins')+'">'+priceTag(v)+'</div>'+
     (owned?'':'<div style="margin-top:4px;"><span class="ir-stars">⭐ '+v.s+'</span></div>')+'</div>';
@@ -2437,7 +2448,7 @@ function openItem(k){
   ITEM_KEY=k;
   const v=ITEMS[k];const owned=S.purchases.includes(k);
   const f=activeFighter();const cur=f?fighterPower(f):0;
-  $('imIcon').textContent=v.icon;
+  $('imIcon').innerHTML=itemIconHTML(v);
   $('imName').textContent=v.name;
   $('imTier').innerHTML='<span class="tier-badge t'+v.tier+'" style="margin:0;">TIER '+v.tier+'</span> <span class="item-stat" style="margin:0 0 0 6px;">'+v.sect.replace(/s$/,'')+'</span>';
   $('imDesc').textContent=ITEM_DESC[k]||'';
